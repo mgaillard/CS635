@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/MainWindow">
+        <file>Images/front.jpg</file>
+        <file>Images/left.jpg</file>
+        <file>Images/right.jpg</file>
+    </qresource>
+</RCC>
