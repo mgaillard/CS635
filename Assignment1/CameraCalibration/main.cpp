@@ -6,6 +6,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d.hpp>
 
+#include "Utils.h"
+#include "HomographyProblem.h"
+
 void findCorners(
 	const cv::Mat& image,
 	std::vector<std::vector<cv::Vec3f>>& objectPoints,
@@ -112,20 +115,19 @@ double computeAvgReProjectionError(
 	return meanError / objectPoints.size();
 }
 
-cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m)
+double computeAvgReProjectionError(
+	const std::vector<cv::Vec3f>& objectPoints,
+	const std::vector<cv::Vec2f>& imagePoints,
+	const cv::Mat& H)
 {
-	cv::Mat1f point(3, 1);
-	point.at<float>(0) = m(0);
-	point.at<float>(1) = m(1);
-	point.at<float>(2) = 1.0f;
+	float meanError = 0.0f;
+	for (unsigned int i = 0; i < objectPoints.size(); i++)
+	{
+		const auto projectedPoint = projectPoint(H, objectPoints[i]);
+		meanError += cv::norm(imagePoints[i], projectedPoint, cv::NORM_L2);
+	}
 
-	cv::Mat1f result = H * point;
-
-	// Divide by W
-	return cv::Vec2f(
-		result.at<float>(0) / result.at<float>(2),
-		result.at<float>(1) / result.at<float>(2)
-	);
+	return meanError / objectPoints.size();
 }
 
 float findHomography(
@@ -167,22 +169,16 @@ float findHomography(
 	// Last row of vt contains the initial guess for H
 	auto H = vt.row(8).reshape(0, 3);
 
+	// Refine H based on the least square minimization
+	H = refineHomography(objectPoints, imagePoints, H);
+
 	// Normalize the H matrix
 	H /= H.at<float>(2, 2);
-
-	// TODO: refine H based on the least square minimization
 
 	// As a reference, this is how we could get the homography directly from OpenCV
 	// cv::Mat H = cv::findHomography(objectPointsPlanar, imagePoints);
 	
-	float meanError = 0.0f;
-	for (unsigned int i = 0; i < objectPoints.size(); i++)
-	{
-		const auto projectedPoint = projectPoint(H, objectPoints[i]);
-		meanError += cv::norm(imagePoints[i], projectedPoint, cv::NORM_L2);
-	}
-
-	return meanError / objectPoints.size();
+	return computeAvgReProjectionError(objectPoints, imagePoints, H);
 }
 
 int main(int argc, char* argv[])
