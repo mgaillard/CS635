@@ -40,7 +40,7 @@ void findCorners(
 			         corners,
 			         cv::Size(11 * scaleFactorInverse, 11 * scaleFactorInverse),
 			         cv::Size(-1, -1),
-			         cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+			         cv::TermCriteria(cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 30, 0.1));
 
 		// Display corners in an output file
 		// cv::drawChessboardCorners(image, patternSize, cv::Mat(corners), patternFound);
