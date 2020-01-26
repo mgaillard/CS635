@@ -140,7 +140,40 @@ float findHomography(
 		objectPointsPlanar.emplace_back(objectPoints[i](0), objectPoints[i](1));
 	}
 
-	const auto H = cv::findHomography(objectPointsPlanar, imagePoints);
+	// Create the matrix L to solve for an initial value of the 
+	cv::Mat1f L(2 * objectPoints.size(), 9, 0.0f);
+
+	for (int i = 0; i < objectPoints.size(); i++)
+	{
+		L.at<float>(2 * i, 0) = objectPoints[i][0];
+		L.at<float>(2 * i, 1) = objectPoints[i][1];
+		L.at<float>(2 * i, 2) = 1.0f;
+		L.at<float>(2 * i, 6) = -imagePoints[i][0] * objectPoints[i][0];
+		L.at<float>(2 * i, 7) = -imagePoints[i][0] * objectPoints[i][1];
+		L.at<float>(2 * i, 8) = -imagePoints[i][0];
+
+		L.at<float>(2 * i + 1, 3) = objectPoints[i][0];
+		L.at<float>(2 * i + 1, 4) = objectPoints[i][1];
+		L.at<float>(2 * i + 1, 5) = 1.0f;
+		L.at<float>(2 * i + 1, 6) = -imagePoints[i][1] * objectPoints[i][0];
+		L.at<float>(2 * i + 1, 7) = -imagePoints[i][1] * objectPoints[i][1];
+		L.at<float>(2 * i + 1, 8) = -imagePoints[i][1];
+	}
+
+	// We are looking at the right singular vector of L associated to the smallest singular value
+	cv::Mat w, u, vt;
+	cv::SVD::compute(L, w, u, vt, cv::SVD::FULL_UV);
+
+	// Last row of vt contains the initial guess for H
+	auto H = vt.row(8).reshape(0, 3);
+
+	// Normalize the H matrix
+	H /= H.at<float>(2, 2);
+
+	// TODO: refine H based on the least square minimization
+
+	// As a reference, this is how we could get the homography directly from OpenCV
+	// cv::Mat H = cv::findHomography(objectPointsPlanar, imagePoints);
 	
 	float meanError = 0.0f;
 	for (unsigned int i = 0; i < objectPoints.size(); i++)
@@ -164,6 +197,9 @@ int main(int argc, char* argv[])
 	findCorners(imageFront, objectPoints, imagePoints);
 	findCorners(imageLeft, objectPoints, imagePoints);
 
+	std::cout << findHomography(objectPoints[0], imagePoints[0]) << std::endl;
+	std::cout << findHomography(objectPoints[1], imagePoints[1]) << std::endl;
+	
 	cv::Mat cameraMatrix;
 	cv::Mat distCoeffs;
 	std::vector<cv::Mat> rvecs;
@@ -199,9 +235,6 @@ int main(int argc, char* argv[])
 	
 	std::cout << "RMS re-projection error = " << rmsError << std::endl;
 	std::cout << "AVG re-projection error = " << avgError << std::endl;
-
-	std::cout << findHomography(objectPoints[0], imagePoints[0]) << std::endl;
-	std::cout << findHomography(objectPoints[1], imagePoints[1]) << std::endl;
 
 	return 0;
 }
