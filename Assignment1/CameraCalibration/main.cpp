@@ -130,7 +130,7 @@ double computeAvgReProjectionError(
 	return meanError / objectPoints.size();
 }
 
-float findHomography(
+cv::Mat findHomography(
 	const std::vector<cv::Vec3f>& objectPoints,
 	const std::vector<cv::Vec2f>& imagePoints)
 {
@@ -142,7 +142,7 @@ float findHomography(
 		objectPointsPlanar.emplace_back(objectPoints[i](0), objectPoints[i](1));
 	}
 
-	// Create the matrix L to solve for an initial value of the 
+	// Create the matrix L to solve for an initial value of the homography
 	cv::Mat1f L(2 * objectPoints.size(), 9, 0.0f);
 
 	for (int i = 0; i < objectPoints.size(); i++)
@@ -173,12 +173,102 @@ float findHomography(
 	H = refineHomography(objectPoints, imagePoints, H);
 
 	// Normalize the H matrix
-	H /= H.at<float>(2, 2);
+	// H /= H.at<float>(2, 2);
 
 	// As a reference, this is how we could get the homography directly from OpenCV
 	// cv::Mat H = cv::findHomography(objectPointsPlanar, imagePoints);
 	
-	return computeAvgReProjectionError(objectPoints, imagePoints, H);
+	return H;
+}
+
+cv::Mat1f computeV(const cv::Mat1f& H, int i, int j)
+{
+	assert(H.rows == 3);
+	assert(H.cols == 3);
+
+	// i and j are indexed from 0
+	i -= 1;
+	j -= 1;
+
+	cv::Mat1f v(6, 1, 0.0f);
+
+	v.at<float>(0) = H.at<float>(0, i) * H.at<float>(0, j);
+	v.at<float>(0) = H.at<float>(0, i) * H.at<float>(1, j) + H.at<float>(1, i) * H.at<float>(0, j);
+	v.at<float>(0) = H.at<float>(1, i) * H.at<float>(1, j);
+	v.at<float>(0) = H.at<float>(2, i) * H.at<float>(0, j) + H.at<float>(0, i) * H.at<float>(2, j);
+	v.at<float>(0) = H.at<float>(2, i) * H.at<float>(1, j) + H.at<float>(1, i) * H.at<float>(2, j);
+	v.at<float>(0) = H.at<float>(2, i) * H.at<float>(2, j);
+
+	return v;
+}
+
+cv::Mat1f formSymmetricMat(const cv::Mat1f& b)
+{
+	assert(b.rows == 6);
+	assert(b.cols == 1);
+	
+	cv::Mat1f B(3, 3, 0.0f);
+
+	// First row
+	B.at<float>(0, 0) = b.at<float>(0);
+	B.at<float>(0, 1) = b.at<float>(1);
+	B.at<float>(0, 2) = b.at<float>(3);
+
+	// Second row
+	B.at<float>(1, 0) = b.at<float>(1);
+	B.at<float>(1, 1) = b.at<float>(2);
+	B.at<float>(1, 2) = b.at<float>(4);
+
+	// Third row
+	B.at<float>(2, 0) = b.at<float>(3);
+	B.at<float>(2, 1) = b.at<float>(4);
+	B.at<float>(2, 2) = b.at<float>(5);
+	
+	return B;
+}
+
+void solveCameraCalibration(const cv::Mat1f& homography1, const cv::Mat1f& homography2)
+{
+	assert(homography1.rows == 3);
+	assert(homography1.cols == 3);
+
+	assert(homography2.rows == 3);
+	assert(homography2.cols == 3);
+
+	const std::array<const cv::Mat1f*, 2> homographies = { {&homography1, &homography2} };
+	
+	// We try to find the matrix B that solves the equation (3) and (4) for each view
+	// Two homographies of the same pattern means 4 equations
+	cv::Mat1f V(4, 6, 0.0f);
+	for (unsigned int i = 0; i < homographies.size(); i++)
+	{
+		const auto& v11 = computeV(*homographies[i], 1, 1);
+		const auto& v12 = computeV(*homographies[i], 1, 2);
+		const auto& v22 = computeV(*homographies[i], 2, 2);
+
+		V.row(2 * i) = v12.t();
+		V.row(2 * i) = (v11 - v22).t();
+	}
+
+	// We are looking at the right singular vector of V associated to the smallest singular value
+	cv::Mat w, u, vt;
+	cv::SVD::compute(V, w, u, vt, cv::SVD::FULL_UV);
+
+	// Last row of vt contains the initial guess for H
+	const auto b = vt.row(5).reshape(0, 6);
+	const auto B = formSymmetricMat(b);
+
+	std::cout << "B = " << std::endl << B << std::endl;
+
+	for (unsigned int i = 0; i < homographies.size(); i++)
+	{
+		const auto eq3 = homographies[i]->col(0).t() * B * homographies[i]->col(1);
+		const auto eq4 = homographies[i]->col(0).t() * B * homographies[i]->col(0)
+		               - homographies[i]->col(1).t() * B * homographies[i]->col(1);
+		
+		std::cout << "Eq 3: " << eq3 << std::endl;
+		std::cout << "Eq 4: " << eq4 << std::endl;
+	}
 }
 
 int main(int argc, char* argv[])
@@ -193,9 +283,15 @@ int main(int argc, char* argv[])
 	findCorners(imageFront, objectPoints, imagePoints);
 	findCorners(imageLeft, objectPoints, imagePoints);
 
-	std::cout << findHomography(objectPoints[0], imagePoints[0]) << std::endl;
-	std::cout << findHomography(objectPoints[1], imagePoints[1]) << std::endl;
-	
+	const auto H1 = findHomography(objectPoints[0], imagePoints[0]);
+	const auto H2 = findHomography(objectPoints[1], imagePoints[1]);
+
+	std::cout << "View 1 re-projection error = " << computeAvgReProjectionError(objectPoints[0], imagePoints[0], H1) << std::endl;
+	std::cout << "View 2 re-projection error = " << computeAvgReProjectionError(objectPoints[1], imagePoints[1], H2) << std::endl;
+
+	solveCameraCalibration(H1, H2);
+
+	/*
 	cv::Mat cameraMatrix;
 	cv::Mat distCoeffs;
 	std::vector<cv::Mat> rvecs;
@@ -231,7 +327,8 @@ int main(int argc, char* argv[])
 	
 	std::cout << "RMS re-projection error = " << rmsError << std::endl;
 	std::cout << "AVG re-projection error = " << avgError << std::endl;
-
+	*/
+	
 	return 0;
 }
 
