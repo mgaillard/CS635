@@ -173,7 +173,7 @@ cv::Mat findHomography(
 	H = refineHomography(objectPoints, imagePoints, H);
 
 	// Normalize the H matrix
-	// H /= H.at<float>(2, 2);
+	H /= H.at<float>(2, 2);
 
 	// As a reference, this is how we could get the homography directly from OpenCV
 	// cv::Mat H = cv::findHomography(objectPointsPlanar, imagePoints);
@@ -193,11 +193,11 @@ cv::Mat1f computeV(const cv::Mat1f& H, int i, int j)
 	cv::Mat1f v(6, 1, 0.0f);
 
 	v.at<float>(0) = H.at<float>(0, i) * H.at<float>(0, j);
-	v.at<float>(0) = H.at<float>(0, i) * H.at<float>(1, j) + H.at<float>(1, i) * H.at<float>(0, j);
-	v.at<float>(0) = H.at<float>(1, i) * H.at<float>(1, j);
-	v.at<float>(0) = H.at<float>(2, i) * H.at<float>(0, j) + H.at<float>(0, i) * H.at<float>(2, j);
-	v.at<float>(0) = H.at<float>(2, i) * H.at<float>(1, j) + H.at<float>(1, i) * H.at<float>(2, j);
-	v.at<float>(0) = H.at<float>(2, i) * H.at<float>(2, j);
+	v.at<float>(1) = H.at<float>(0, i) * H.at<float>(1, j) + H.at<float>(1, i) * H.at<float>(0, j);
+	v.at<float>(2) = H.at<float>(1, i) * H.at<float>(1, j);
+	v.at<float>(3) = H.at<float>(2, i) * H.at<float>(0, j) + H.at<float>(0, i) * H.at<float>(2, j);
+	v.at<float>(4) = H.at<float>(2, i) * H.at<float>(1, j) + H.at<float>(1, i) * H.at<float>(2, j);
+	v.at<float>(5) = H.at<float>(2, i) * H.at<float>(2, j);
 
 	return v;
 }
@@ -227,7 +227,7 @@ cv::Mat1f formSymmetricMat(const cv::Mat1f& b)
 	return B;
 }
 
-void solveCameraCalibration(const cv::Mat1f& homography1, const cv::Mat1f& homography2)
+cv::Mat1f solveCameraCalibration(const cv::Mat1f& homography1, const cv::Mat1f& homography2)
 {
 	assert(homography1.rows == 3);
 	assert(homography1.cols == 3);
@@ -239,27 +239,32 @@ void solveCameraCalibration(const cv::Mat1f& homography1, const cv::Mat1f& homog
 	
 	// We try to find the matrix B that solves the equation (3) and (4) for each view
 	// Two homographies of the same pattern means 4 equations
-	cv::Mat1f V(4, 6, 0.0f);
+	cv::Mat1f V(5, 6, 0.0f);
 	for (unsigned int i = 0; i < homographies.size(); i++)
 	{
-		const auto& v11 = computeV(*homographies[i], 1, 1);
-		const auto& v12 = computeV(*homographies[i], 1, 2);
-		const auto& v22 = computeV(*homographies[i], 2, 2);
+		const auto v11 = computeV(*homographies[i], 1, 1);
+		const auto v12 = computeV(*homographies[i], 1, 2);
+		const auto v22 = computeV(*homographies[i], 2, 2);
 
 		V.row(2 * i) = v12.t();
-		V.row(2 * i) = (v11 - v22).t();
+		V.row(2 * i + 1) = (v11 - v22).t();
 	}
+
+	// Since we have only two views, impose the skewless constraint gamma = 0
+	// Row 4 of the V matrix is [0, 1, 0, 0, 0, 0]
+	V.at<float>(4, 1) = 1.0f;
 
 	// We are looking at the right singular vector of V associated to the smallest singular value
 	cv::Mat w, u, vt;
 	cv::SVD::compute(V, w, u, vt, cv::SVD::FULL_UV);
 
-	// Last row of vt contains the initial guess for H
+	// Last row of vt contains the initial guess for b
 	const auto b = vt.row(5).reshape(0, 6);
 	const auto B = formSymmetricMat(b);
 
-	std::cout << "B = " << std::endl << B << std::endl;
-
+	// Display error values of the equations for debugging purpose
+	/*
+	std::cout << "b = " << std::endl << b << std::endl;
 	for (unsigned int i = 0; i < homographies.size(); i++)
 	{
 		const auto eq3 = homographies[i]->col(0).t() * B * homographies[i]->col(1);
@@ -269,6 +274,31 @@ void solveCameraCalibration(const cv::Mat1f& homography1, const cv::Mat1f& homog
 		std::cout << "Eq 3: " << eq3 << std::endl;
 		std::cout << "Eq 4: " << eq4 << std::endl;
 	}
+	std::cout << "V*b = " << std::endl << V*b << std::endl;
+	*/
+
+	const auto b11 = b.at<float>(0);
+	const auto b12 = b.at<float>(1);
+	const auto b22 = b.at<float>(2);
+	const auto b13 = b.at<float>(3);
+	const auto b23 = b.at<float>(4);
+	const auto b33 = b.at<float>(5);
+
+	const auto v0 = (b12 * b13 - b11 * b23) / (b11 * b22 - b12 * b12);
+	const auto lambda = b33 - (b13 * b13 + v0 * (b12 * b13 - b11 * b23)) / b11;
+	const auto alpha = std::sqrt(lambda / b11);
+	const auto beta = std::sqrt(lambda * b11 / (b11 * b22 - b12 * b12));
+	const auto gamma = -b12 * alpha * alpha * beta / lambda;
+	const auto u0 = gamma * v0 / beta - b13 * alpha * alpha / lambda;
+
+	cv::Mat1f A(3, 3, 0.0f);
+	A.at<float>(0, 0) = alpha;
+	A.at<float>(0, 2) = u0;
+	A.at<float>(1, 1) = beta;
+	A.at<float>(1, 2) = v0;
+	A.at<float>(2, 2) = 1.0f;
+
+	return A;
 }
 
 int main(int argc, char* argv[])
@@ -289,7 +319,9 @@ int main(int argc, char* argv[])
 	std::cout << "View 1 re-projection error = " << computeAvgReProjectionError(objectPoints[0], imagePoints[0], H1) << std::endl;
 	std::cout << "View 2 re-projection error = " << computeAvgReProjectionError(objectPoints[1], imagePoints[1], H2) << std::endl;
 
-	solveCameraCalibration(H1, H2);
+	const auto A = solveCameraCalibration(H1, H2);
+
+	std::cout << "A = " << std::endl << A << std::endl;
 
 	/*
 	cv::Mat cameraMatrix;
