@@ -301,6 +301,33 @@ cv::Mat1f solveCameraCalibration(const cv::Mat1f& homography1, const cv::Mat1f& 
 	return A;
 }
 
+std::pair<cv::Mat1f, cv::Mat1f> computeExtrinsicParameters(const cv::Mat1f& homography, const cv::Mat1f& A)
+{
+	assert(homography.rows == 3);
+	assert(homography.cols == 3);
+
+	assert(A.rows == 3);
+	assert(A.cols == 3);
+
+	// Inverse the intrinsic matrix
+	const cv::Mat1f invA = A.inv();
+
+	const cv::Mat1f h1 = homography.col(0);
+	const cv::Mat1f h2 = homography.col(1);
+	const cv::Mat1f h3 = homography.col(2);
+
+	// Rotation matrix
+	cv::Mat1f R(3, 3, 0.0f);
+	R.col(0) = invA * h1 / cv::norm(invA * h1);
+	R.col(1) = invA * h2 / cv::norm(invA * h2);
+	R.col(2) = R.col(0).cross(R.col(1));
+
+	// Translation
+	const cv::Mat1f t = invA * h3 / cv::norm(invA * h1);
+	
+	return std::make_pair(R, t);
+}
+
 int main(int argc, char* argv[])
 {
 	const auto imageFront = cv::imread("Images/front.jpg");
@@ -312,7 +339,7 @@ int main(int argc, char* argv[])
 	
 	findCorners(imageFront, objectPoints, imagePoints);
 	findCorners(imageLeft, objectPoints, imagePoints);
-
+	
 	const auto H1 = findHomography(objectPoints[0], imagePoints[0]);
 	const auto H2 = findHomography(objectPoints[1], imagePoints[1]);
 
@@ -321,8 +348,21 @@ int main(int argc, char* argv[])
 
 	const auto A = solveCameraCalibration(H1, H2);
 
-	std::cout << "A = " << std::endl << A << std::endl;
+	const auto extrinsicParameters1 = computeExtrinsicParameters(H1, A);
+	const auto extrinsicParameters2 = computeExtrinsicParameters(H2, A);
 
+
+	cv::Mat angles;
+	
+	std::cout << "View 0" << std::endl;
+	cv::Rodrigues(extrinsicParameters1.first, angles);
+	std::cout << "angles = " << std::endl << angles << std::endl;
+	std::cout << "t = " << std::endl << extrinsicParameters1.second << std::endl;
+	std::cout << "View 1" << std::endl;
+	cv::Rodrigues(extrinsicParameters2.first, angles);
+	std::cout << "angles = " << std::endl << angles << std::endl;
+	std::cout << "t = " << std::endl << extrinsicParameters2.second << std::endl;
+	
 	/*
 	cv::Mat cameraMatrix;
 	cv::Mat distCoeffs;
