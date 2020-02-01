@@ -29,15 +29,26 @@ cv::Mat computeProjectionMatrix(cv::Mat cameraMatrix, cv::Mat rvec, cv::Mat tvec
 	// Compute projection matrix by multiplying intrinsic parameter 
 	// matrix (A) with 3 x 4 rotation and translation pose matrix (RT).
 	// Formula: Projection Matrix = A * RT;
-	return (cameraMatrix * rotTransMat);
+	cv::Mat result = (cameraMatrix * rotTransMat);
+	return result.clone();
 }
 
-cv::Mat1f removeZProjectionMatrix(cv::Mat projectionMatrix)
+cv::Mat1f removeZProjectionMatrix(const cv::Mat& projectionMatrix)
 {
-	cv::Mat1f H(3, 3);
-	H.col(0) = projectionMatrix.col(0);
-	H.col(1) = projectionMatrix.col(1);
-	H.col(2) = projectionMatrix.col(3);
+	cv::Mat1f H(3, 3, 0.0f);
+
+	H.at<float>(0, 0) = projectionMatrix.at<float>(0, 0);
+	H.at<float>(1, 0) = projectionMatrix.at<float>(1, 0);
+	H.at<float>(2, 0) = projectionMatrix.at<float>(2, 0);
+
+	H.at<float>(0, 1) = projectionMatrix.at<float>(0, 1);
+	H.at<float>(1, 1) = projectionMatrix.at<float>(1, 1);
+	H.at<float>(2, 1) = projectionMatrix.at<float>(2, 1);
+
+	H.at<float>(0, 2) = projectionMatrix.at<float>(0, 3);
+	H.at<float>(1, 2) = projectionMatrix.at<float>(1, 3);
+	H.at<float>(2, 2) = projectionMatrix.at<float>(2, 3);
+	
 	H /= H.at<float>(2, 2);
 
 	return H;

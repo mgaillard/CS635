@@ -8,6 +8,20 @@
 
 #include "Utils.h"
 #include "HomographyProblem.h"
+#include "BundleAdjustmentProblem.h"
+
+std::vector<cv::Mat> convert(const std::vector<cv::Mat1f>& v)
+{
+	std::vector<cv::Mat> u;
+	
+	u.reserve(v.size());
+	for (const auto& m : v)
+	{
+		u.push_back(m);
+	}
+
+	return u;
+}
 
 void findCorners(
 	const cv::Mat& image,
@@ -87,6 +101,24 @@ double computeRMSReProjectionError(
 	return std::sqrt(meanError / objectPoints.size());
 }
 
+double computeRMSReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat1f>& rvecs,
+	const std::vector<cv::Mat1f>& tvecs)
+{
+	return computeRMSReProjectionError(
+		objectPoints,
+		imagePoints,
+		cameraMatrix,
+		distCoeffs,
+		convert(rvecs),
+		convert(tvecs)
+	);
+}
+
 double computeAvgReProjectionError(
 	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
 	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
@@ -113,6 +145,24 @@ double computeAvgReProjectionError(
 	}
 
 	return meanError / objectPoints.size();
+}
+
+double computeAvgReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat1f>& rvecs,
+	const std::vector<cv::Mat1f>& tvecs)
+{
+	return computeAvgReProjectionError(
+		objectPoints,
+		imagePoints,
+		cameraMatrix,
+		distCoeffs,
+		convert(rvecs),
+		convert(tvecs)
+	);
 }
 
 double computeAvgReProjectionError(
@@ -342,7 +392,7 @@ int main(int argc, char* argv[])
 	
 	const auto H1 = findHomography(objectPoints[0], imagePoints[0]);
 	const auto H2 = findHomography(objectPoints[1], imagePoints[1]);
-
+	
 	std::cout << "View 1 re-projection error = " << computeAvgReProjectionError(objectPoints[0], imagePoints[0], H1) << std::endl;
 	std::cout << "View 2 re-projection error = " << computeAvgReProjectionError(objectPoints[1], imagePoints[1], H2) << std::endl;
 
@@ -351,17 +401,25 @@ int main(int argc, char* argv[])
 	const auto extrinsicParameters1 = computeExtrinsicParameters(H1, A);
 	const auto extrinsicParameters2 = computeExtrinsicParameters(H2, A);
 
+	std::vector<cv::Mat1f> guessRvecs;
+	std::vector<cv::Mat1f> guessTvecs;
 
-	cv::Mat angles;
+	cv::Mat1f angles1;
+	cv::Rodrigues(extrinsicParameters1.first, angles1);
+	guessRvecs.push_back(angles1);
+	guessTvecs.push_back(extrinsicParameters1.second);
 	
-	std::cout << "View 0" << std::endl;
-	cv::Rodrigues(extrinsicParameters1.first, angles);
-	std::cout << "angles = " << std::endl << angles << std::endl;
-	std::cout << "t = " << std::endl << extrinsicParameters1.second << std::endl;
-	std::cout << "View 1" << std::endl;
-	cv::Rodrigues(extrinsicParameters2.first, angles);
-	std::cout << "angles = " << std::endl << angles << std::endl;
-	std::cout << "t = " << std::endl << extrinsicParameters2.second << std::endl;
+	cv::Mat1f angles2;
+	cv::Rodrigues(extrinsicParameters2.first, angles2);
+	guessRvecs.push_back(angles2);
+	guessTvecs.push_back(extrinsicParameters2.second);
+
+	// Bundle adjustment
+	cv::Mat1f cameraMatrix;
+	cv::Mat1f distCoeffs(1, 5, 0.0f); // Empty distortion coefficients
+	std::vector<cv::Mat1f> rvecs;
+	std::vector<cv::Mat1f> tvecs;
+	std::tie(cameraMatrix, rvecs, tvecs) = bundleAdjustment(objectPoints, imagePoints, A, guessRvecs, guessTvecs);
 	
 	/*
 	cv::Mat cameraMatrix;
@@ -375,6 +433,7 @@ int main(int argc, char* argv[])
 										   distCoeffs,
 		                                   rvecs,
 		                                   tvecs);
+	*/
 	
 	// Camera matrix M
 	std::cout << "Camera matrix = " << std::endl << " " << cameraMatrix << std::endl << std::endl;
@@ -392,14 +451,13 @@ int main(int argc, char* argv[])
 		// Translation vector
 		std::cout << "tvec = " << std::endl << " " << tvecs[i] << std::endl << std::endl;
 	}
-
+	
 	// Manually compute the re-projection error
 	const auto rmsError = computeRMSReProjectionError(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvecs, tvecs);
 	const auto avgError = computeAvgReProjectionError(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvecs, tvecs);
 	
 	std::cout << "RMS re-projection error = " << rmsError << std::endl;
 	std::cout << "AVG re-projection error = " << avgError << std::endl;
-	*/
 	
 	return 0;
 }
