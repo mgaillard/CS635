@@ -378,6 +378,14 @@ std::pair<cv::Mat1f, cv::Mat1f> computeExtrinsicParameters(const cv::Mat1f& homo
 	return std::make_pair(R, t);
 }
 
+std::pair<float, float> focalLengthInMm(const cv::Mat1f& cameraMatrix, const cv::Size& imageSize, const cv::Size2f& sensorSize)
+{
+	return {
+		cameraMatrix.at<float>(0, 0) * sensorSize.width / imageSize.width,
+		cameraMatrix.at<float>(1, 1) * sensorSize.height / imageSize.height
+	};
+}
+
 int main(int argc, char* argv[])
 {
 	const auto imageFront = cv::imread("Images/front.jpg");
@@ -437,6 +445,12 @@ int main(int argc, char* argv[])
 	
 	// Camera matrix M
 	std::cout << "Camera matrix = " << std::endl << " " << cameraMatrix << std::endl << std::endl;
+
+	// For a Google Pixel 3, the sensor is 5.76 mm by 4.29 mm
+	const cv::Size2f sensorSize(5.76f, 4.29f);
+	const auto focalLength = focalLengthInMm(cameraMatrix, imageFront.size(), sensorSize);
+	std::cout << "Focal length (in mm): width = " << focalLength.first
+	          << " height = " << focalLength.second << std::endl << std::endl;
 
 	// Distortion
 	std::cout << "Distortion coefficients = " << std::endl << " " << distCoeffs << std::endl << std::endl;

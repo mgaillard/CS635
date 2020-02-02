@@ -118,6 +118,8 @@ bundleAdjustment(
 	assert(rvecs.size() == 2);
 	assert(tvecs.size() == 2);
 
+	std::cout << "Bundle adjustment" << std::endl;
+
 	std::vector<std::tuple<int, cv::Vec3f, cv::Vec2f>> data;
 
 	data.reserve(objectPoints[0].size() + objectPoints[1].size());
