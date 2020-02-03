@@ -466,10 +466,6 @@ int main(int argc, char* argv[])
 
 	const auto extrinsicParameters1 = computeExtrinsicParameters(H1, A);
 	const auto extrinsicParameters2 = computeExtrinsicParameters(H2, A);
-
-	
-	std::cout << "R1 = " << std::endl << extrinsicParameters1.first << std::endl;
-	std::cout << "R2 = " << std::endl << extrinsicParameters2.first << std::endl;
 	
 	std::vector<cv::Mat1f> guessRvecs;
 	std::vector<cv::Mat1f> guessTvecs;
@@ -523,6 +519,10 @@ int main(int argc, char* argv[])
 
 		// Rotation vector
 		std::cout << "rvec = " << std::endl << " " << rvecs[i] << std::endl << std::endl;
+		cv::Mat1f rvecsMatrix;
+		cv::Rodrigues(rvecs[i], rvecsMatrix);
+		std::cout << "matrix = " << std::endl << " " << rotationX180(rvecsMatrix).t() << std::endl << std::endl;
+		std::cout << "euler = " << std::endl << " " << rotationMatrixToEulerAnglesDeg(rotationX180(rvecsMatrix).t()) << std::endl << std::endl;
 
 		// Translation vector
 		std::cout << "tvec = " << std::endl << " " << tvecs[i] << std::endl << std::endl;

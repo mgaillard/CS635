@@ -1,7 +1,10 @@
 #include "Utils.h"
 
-#include <opencv2/calib3d.hpp>
 #include <iostream>
+
+#include <QtMath>
+
+#include <opencv2/calib3d.hpp>
 
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m)
 {
@@ -78,4 +81,43 @@ bool isRotationMatrix(const cv::Mat1f& R)
 	cv::Mat I = cv::Mat::eye(3, 3, shouldBeIdentity.type());
 
 	return  cv::norm(I, shouldBeIdentity) < 1e-6;
+}
+
+// Calculates rotation matrix to euler angles
+// The result is the same as MATLAB except the order
+// of the euler angles ( x and z are swapped ).
+cv::Vec3f rotationMatrixToEulerAngles(const cv::Mat1f& R)
+{
+	assert(isRotationMatrix(R));
+
+	float sy = sqrt(R.at<double>(0, 0) * R.at<double>(0, 0) + R.at<double>(1, 0) * R.at<double>(1, 0));
+
+	bool singular = sy < 1e-6; // If
+
+	float x, y, z;
+	if (!singular)
+	{
+		x = atan2(R.at<double>(2, 1), R.at<double>(2, 2));
+		y = atan2(-R.at<double>(2, 0), sy);
+		z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
+	}
+	else
+	{
+		x = atan2(-R.at<double>(1, 2), R.at<double>(1, 1));
+		y = atan2(-R.at<double>(2, 0), sy);
+		z = 0;
+	}
+	
+	return { x, y, z };
+}
+
+cv::Vec3f rotationMatrixToEulerAnglesDeg(const cv::Mat1f& R)
+{
+	const auto anglesRad = rotationMatrixToEulerAngles(R);
+
+	return {
+		qRadiansToDegrees(anglesRad[0]),
+		qRadiansToDegrees(anglesRad[1]),
+		qRadiansToDegrees(anglesRad[2])
+	};
 }
