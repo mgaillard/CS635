@@ -26,7 +26,8 @@ std::vector<cv::Mat> convert(const std::vector<cv::Mat1f>& v)
 void findCorners(
 	const cv::Mat& image,
 	std::vector<std::vector<cv::Vec3f>>& objectPoints,
-	std::vector<std::vector<cv::Vec2f>>& imagePoints
+	std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const std::string& outputKeypoints
 	)
 {
 	// Scale the image when looking for corners
@@ -60,8 +61,9 @@ void findCorners(
 			         cv::TermCriteria(cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 30, 0.1));
 
 		// Display corners in an output file
-		// cv::drawChessboardCorners(image, patternSize, cv::Mat(corners), patternFound);
-		// cv::imwrite("Images/output.jpg", image);
+		cv::Mat newImage = image.clone();
+		cv::drawChessboardCorners(newImage, patternSize, cv::Mat(corners), patternFound);
+		cv::imwrite(outputKeypoints, newImage);
 
 		// Convert to reference points
 		std::vector<cv::Vec3f> currentObjectPoints;
@@ -70,7 +72,7 @@ void findCorners(
 		{
 			for (int i = 0; i < patternSize.width; i++)
 			{
-				currentObjectPoints.emplace_back(float(i) * squareSize, float(j) * squareSize, 0.0f);
+				currentObjectPoints.emplace_back(float(j) * squareSize, float(i) * squareSize, 0.0f);
 			}
 		}
 
@@ -370,7 +372,7 @@ std::pair<cv::Mat1f, cv::Mat1f> computeExtrinsicParameters(const cv::Mat1f& homo
 	cv::Mat1f R(3, 3, 0.0f);
 	R.col(0) = invA * h1 / cv::norm(invA * h1);
 	R.col(1) = invA * h2 / cv::norm(invA * h2);
-	R.col(2) = R.col(0).cross(R.col(1));
+	R.col(2) = 1.0f * R.col(0).cross(R.col(1));
 
 	// Translation
 	const cv::Mat1f t = invA * h3 / cv::norm(invA * h1);
@@ -386,6 +388,59 @@ std::pair<float, float> focalLengthInMm(const cv::Mat1f& cameraMatrix, const cv:
 	};
 }
 
+void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
+{
+	cv::Mat1f R;
+	cv::Rodrigues(rvec, R); // R is 3x3
+
+	auto invTvec = -R.t() * tvec; // translation of inverse
+	R = rotationX180(R).t();  // rotation of inverse
+
+	cv::Mat1f T = cv::Mat1f::eye(4, 4); // T is 4x4
+	T(cv::Range(0, 3), cv::Range(0, 3)) = R * 1; // copies R into T
+	T(cv::Range(0, 3), cv::Range(3, 4)) = invTvec * 1; // copies tvec into T
+
+	std::cout << "T = " << std::endl << T << std::endl;
+}
+
+void drawProjectedCorners(
+	const cv::Mat& image,
+	const std::vector<cv::Vec3f> &objectPoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const cv::Mat1f rvec,
+	const cv::Mat1f tvec,
+	const std::string& filename)
+{
+	const std::vector<cv::Vec3f> objectPointsX = {
+		{0 * 0.1016f, 0.0f, 0.0f},
+		{1 * 0.1016f, 0.0f, 0.0f},
+		{2 * 0.1016f, 0.0f, 0.0f},
+		{3 * 0.1016f, 0.0f, 0.0f},
+		{4 * 0.1016f, 0.0f, 0.0f},
+		{5 * 0.1016f, 0.0f, 0.0f},
+	};
+
+	
+	std::vector<cv::Vec2f> projectedPoints;
+	cv::projectPoints(objectPoints, rvec, tvec, cameraMatrix, distCoeffs, projectedPoints);
+
+	cv::Mat newImage = image.clone();
+	
+	for (const auto p : projectedPoints)
+	{		
+		cv::circle(
+			newImage,
+			cv::Point(int(p[0]), int(p[1])),
+			3,
+			cv::Scalar(0, 0, 255),
+			cv::FILLED
+		);
+	}
+
+	cv::imwrite(filename, newImage);
+}
+
 int main(int argc, char* argv[])
 {
 	const auto imageFront = cv::imread("Images/front.jpg");
@@ -395,8 +450,11 @@ int main(int argc, char* argv[])
 	std::vector<std::vector<cv::Vec3f>> objectPoints;
 	std::vector<std::vector<cv::Vec2f>> imagePoints;
 	
-	findCorners(imageFront, objectPoints, imagePoints);
-	findCorners(imageLeft, objectPoints, imagePoints);
+	findCorners(imageFront, objectPoints, imagePoints, "Images/front_keypoints.jpg");
+	findCorners(imageLeft, objectPoints, imagePoints, "Images/left_keypoints.jpg");
+	// In the left image, OpenCV finds the chess board upside down, so we reverse the order of image points
+	std::reverse(imagePoints[1].begin(), imagePoints[1].end());
+
 	
 	const auto H1 = findHomography(objectPoints[0], imagePoints[0]);
 	const auto H2 = findHomography(objectPoints[1], imagePoints[1]);
@@ -409,6 +467,10 @@ int main(int argc, char* argv[])
 	const auto extrinsicParameters1 = computeExtrinsicParameters(H1, A);
 	const auto extrinsicParameters2 = computeExtrinsicParameters(H2, A);
 
+	
+	std::cout << "R1 = " << std::endl << extrinsicParameters1.first << std::endl;
+	std::cout << "R2 = " << std::endl << extrinsicParameters2.first << std::endl;
+	
 	std::vector<cv::Mat1f> guessRvecs;
 	std::vector<cv::Mat1f> guessTvecs;
 
@@ -472,6 +534,11 @@ int main(int argc, char* argv[])
 	
 	std::cout << "RMS re-projection error = " << rmsError << std::endl;
 	std::cout << "AVG re-projection error = " << avgError << std::endl;
+
+	drawProjectedCorners(imageFront, objectPoints[0], cameraMatrix, distCoeffs, rvecs[0], tvecs[0], "Images/front_projection.jpg");
+	drawProjectedCorners(imageLeft, objectPoints[1], cameraMatrix, distCoeffs, rvecs[1], tvecs[1], "Images/left_projection.jpg");
+	cameraPose(rvecs[0], tvecs[0]);
+	cameraPose(rvecs[1], tvecs[1]);
 	
 	return 0;
 }

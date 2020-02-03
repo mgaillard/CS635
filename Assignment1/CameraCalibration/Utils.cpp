@@ -1,6 +1,7 @@
 #include "Utils.h"
 
 #include <opencv2/calib3d.hpp>
+#include <iostream>
 
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m)
 {
@@ -52,4 +53,29 @@ cv::Mat1f removeZProjectionMatrix(const cv::Mat& projectionMatrix)
 	H /= H.at<float>(2, 2);
 
 	return H;
+}
+
+cv::Mat rotationX180(const cv::Mat1f& matrix)
+{
+	// 180 degrees rotation matrix
+	cv::Mat1f R(3, 3, 0.0f);
+
+	R.at<float>(0, 0) = 1.0f;
+	R.at<float>(1, 1) = -1.0f;
+	R.at<float>(2, 2) = -1.0f;
+
+	const cv::Mat1f rotationResult = R * matrix;
+
+	return rotationResult.clone();
+}
+
+// Checks if a matrix is a valid rotation matrix.
+bool isRotationMatrix(const cv::Mat1f& R)
+{
+	cv::Mat Rt;
+	transpose(R, Rt);
+	cv::Mat shouldBeIdentity = Rt * R;	
+	cv::Mat I = cv::Mat::eye(3, 3, shouldBeIdentity.type());
+
+	return  cv::norm(I, shouldBeIdentity) < 1e-6;
 }
