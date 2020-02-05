@@ -2,7 +2,7 @@
 
 #include <opencv2/core/core.hpp>
 
-std::tuple<cv::Mat1f, std::vector<cv::Mat1f>, std::vector<cv::Mat1f>>
+std::tuple<cv::Mat1f, cv::Mat1f, std::vector<cv::Mat1f>, std::vector<cv::Mat1f>>
 bundleAdjustment(
 	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
 	const std::vector<std::vector<cv::Vec2f>>& imagePoints,

@@ -399,10 +399,10 @@ int main(int argc, char* argv[])
 
 	// Bundle adjustment
 	cv::Mat1f cameraMatrix;
-	cv::Mat1f distCoeffs(1, 5, 0.0f); // Empty distortion coefficients
+	cv::Mat1f distCoeffs;
 	std::vector<cv::Mat1f> rvecs;
 	std::vector<cv::Mat1f> tvecs;
-	std::tie(cameraMatrix, rvecs, tvecs) = bundleAdjustment(objectPoints, imagePoints, A, guessRvecs, guessTvecs);
+	std::tie(cameraMatrix, distCoeffs, rvecs, tvecs) = bundleAdjustment(objectPoints, imagePoints, A, guessRvecs, guessTvecs);
 	
 	std::cout << "Camera calibration with distortion using OpenCV (for reference)" << std::endl << std::endl;
 	cv::Mat cameraMatrixOpenCV;
