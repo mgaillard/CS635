@@ -16,3 +16,42 @@ bool isRotationMatrix(const cv::Mat1f& R);
 cv::Vec3f rotationMatrixToEulerAngles(const cv::Mat1f& R);
 
 cv::Vec3f rotationMatrixToEulerAnglesDeg(const cv::Mat1f& R);
+
+std::vector<cv::Mat> convert(const std::vector<cv::Mat1f>& v);
+
+double computeRMSReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat>& rvecs,
+	const std::vector<cv::Mat>& tvecs);
+
+double computeRMSReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat1f>& rvecs,
+	const std::vector<cv::Mat1f>& tvecs);
+
+double computeAvgReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat>& rvecs,
+	const std::vector<cv::Mat>& tvecs);
+
+double computeAvgReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat1f>& rvecs,
+	const std::vector<cv::Mat1f>& tvecs);
+
+double computeAvgReProjectionError(
+	const std::vector<cv::Vec3f>& objectPoints,
+	const std::vector<cv::Vec2f>& imagePoints,
+	const cv::Mat& H);

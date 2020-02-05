@@ -121,3 +121,116 @@ cv::Vec3f rotationMatrixToEulerAnglesDeg(const cv::Mat1f& R)
 		qRadiansToDegrees(anglesRad[2])
 	};
 }
+
+std::vector<cv::Mat> convert(const std::vector<cv::Mat1f>& v)
+{
+	std::vector<cv::Mat> u;
+
+	u.reserve(v.size());
+	for (const auto& m : v)
+	{
+		u.push_back(m);
+	}
+
+	return u;
+}
+
+double computeRMSReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat>& rvecs,
+	const std::vector<cv::Mat>& tvecs)
+{
+	double meanError = 0.0f;
+
+	for (unsigned int i = 0; i < objectPoints.size(); i++)
+	{
+		std::vector<cv::Vec2f> projectedPoints;
+		cv::projectPoints(objectPoints[i], rvecs[i], tvecs[i], cameraMatrix, distCoeffs, projectedPoints);
+
+		meanError += cv::norm(imagePoints[i], projectedPoints, cv::NORM_L2SQR) / projectedPoints.size();
+	}
+
+	return std::sqrt(meanError / objectPoints.size());
+}
+
+double computeRMSReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat1f>& rvecs,
+	const std::vector<cv::Mat1f>& tvecs)
+{
+	return computeRMSReProjectionError(
+		objectPoints,
+		imagePoints,
+		cameraMatrix,
+		distCoeffs,
+		convert(rvecs),
+		convert(tvecs)
+	);
+}
+
+double computeAvgReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat>& rvecs,
+	const std::vector<cv::Mat>& tvecs)
+{
+	double meanError = 0.0f;
+
+	for (unsigned int i = 0; i < objectPoints.size(); i++)
+	{
+		std::vector<cv::Vec2f> projectedPoints;
+		cv::projectPoints(objectPoints[i], rvecs[i], tvecs[i], cameraMatrix, distCoeffs, projectedPoints);
+
+		double viewMeanError = 0.0;
+
+		for (unsigned int j = 0; j < projectedPoints.size(); j++)
+		{
+			viewMeanError += cv::norm(imagePoints[i][j], projectedPoints[j], cv::NORM_L2);
+		}
+
+		meanError += viewMeanError / projectedPoints.size();
+	}
+
+	return meanError / objectPoints.size();
+}
+
+double computeAvgReProjectionError(
+	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
+	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
+	const cv::Mat& cameraMatrix,
+	const cv::Mat& distCoeffs,
+	const std::vector<cv::Mat1f>& rvecs,
+	const std::vector<cv::Mat1f>& tvecs)
+{
+	return computeAvgReProjectionError(
+		objectPoints,
+		imagePoints,
+		cameraMatrix,
+		distCoeffs,
+		convert(rvecs),
+		convert(tvecs)
+	);
+}
+
+double computeAvgReProjectionError(
+	const std::vector<cv::Vec3f>& objectPoints,
+	const std::vector<cv::Vec2f>& imagePoints,
+	const cv::Mat& H)
+{
+	float meanError = 0.0f;
+	for (unsigned int i = 0; i < objectPoints.size(); i++)
+	{
+		const auto projectedPoint = projectPoint(H, objectPoints[i]);
+		meanError += cv::norm(imagePoints[i], projectedPoint, cv::NORM_L2);
+	}
+
+	return meanError / objectPoints.size();
+}

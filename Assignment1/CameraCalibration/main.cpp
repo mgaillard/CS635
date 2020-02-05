@@ -10,19 +10,6 @@
 #include "HomographyProblem.h"
 #include "BundleAdjustmentProblem.h"
 
-std::vector<cv::Mat> convert(const std::vector<cv::Mat1f>& v)
-{
-	std::vector<cv::Mat> u;
-	
-	u.reserve(v.size());
-	for (const auto& m : v)
-	{
-		u.push_back(m);
-	}
-
-	return u;
-}
-
 void findCorners(
 	const cv::Mat& image,
 	std::vector<std::vector<cv::Vec3f>>& objectPoints,
@@ -82,105 +69,7 @@ void findCorners(
 	}
 }
 
-double computeRMSReProjectionError(
-	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
-	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
-	const cv::Mat& cameraMatrix,
-    const cv::Mat& distCoeffs,
-    const std::vector<cv::Mat>& rvecs,
-    const std::vector<cv::Mat>& tvecs)
-{
-	double meanError = 0.0f;
 
-	for (unsigned int i = 0; i < objectPoints.size(); i++)
-	{
-		std::vector<cv::Vec2f> projectedPoints;
-		cv::projectPoints(objectPoints[i], rvecs[i], tvecs[i], cameraMatrix, distCoeffs, projectedPoints);
-		
-		meanError += cv::norm(imagePoints[i], projectedPoints, cv::NORM_L2SQR) / projectedPoints.size();
-	}
-
-	return std::sqrt(meanError / objectPoints.size());
-}
-
-double computeRMSReProjectionError(
-	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
-	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
-	const cv::Mat& cameraMatrix,
-	const cv::Mat& distCoeffs,
-	const std::vector<cv::Mat1f>& rvecs,
-	const std::vector<cv::Mat1f>& tvecs)
-{
-	return computeRMSReProjectionError(
-		objectPoints,
-		imagePoints,
-		cameraMatrix,
-		distCoeffs,
-		convert(rvecs),
-		convert(tvecs)
-	);
-}
-
-double computeAvgReProjectionError(
-	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
-	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
-	const cv::Mat& cameraMatrix,
-	const cv::Mat& distCoeffs,
-	const std::vector<cv::Mat>& rvecs,
-	const std::vector<cv::Mat>& tvecs)
-{
-	double meanError = 0.0f;
-
-	for (unsigned int i = 0; i < objectPoints.size(); i++)
-	{
-		std::vector<cv::Vec2f> projectedPoints;
-		cv::projectPoints(objectPoints[i], rvecs[i], tvecs[i], cameraMatrix, distCoeffs, projectedPoints);
-
-		double viewMeanError = 0.0;
-		
-		for (unsigned int j = 0; j < projectedPoints.size(); j++)
-		{
-			viewMeanError += cv::norm(imagePoints[i][j], projectedPoints[j], cv::NORM_L2);
-		}
-		
-		meanError += viewMeanError / projectedPoints.size();
-	}
-
-	return meanError / objectPoints.size();
-}
-
-double computeAvgReProjectionError(
-	const std::vector<std::vector<cv::Vec3f>>& objectPoints,
-	const std::vector<std::vector<cv::Vec2f>>& imagePoints,
-	const cv::Mat& cameraMatrix,
-	const cv::Mat& distCoeffs,
-	const std::vector<cv::Mat1f>& rvecs,
-	const std::vector<cv::Mat1f>& tvecs)
-{
-	return computeAvgReProjectionError(
-		objectPoints,
-		imagePoints,
-		cameraMatrix,
-		distCoeffs,
-		convert(rvecs),
-		convert(tvecs)
-	);
-}
-
-double computeAvgReProjectionError(
-	const std::vector<cv::Vec3f>& objectPoints,
-	const std::vector<cv::Vec2f>& imagePoints,
-	const cv::Mat& H)
-{
-	float meanError = 0.0f;
-	for (unsigned int i = 0; i < objectPoints.size(); i++)
-	{
-		const auto projectedPoint = projectPoint(H, objectPoints[i]);
-		meanError += cv::norm(imagePoints[i], projectedPoint, cv::NORM_L2);
-	}
-
-	return meanError / objectPoints.size();
-}
 
 cv::Mat findHomography(
 	const std::vector<cv::Vec3f>& objectPoints,
@@ -226,10 +115,28 @@ cv::Mat findHomography(
 
 	// Normalize the H matrix
 	H /= H.at<float>(2, 2);
-
-	// As a reference, this is how we could get the homography directly from OpenCV
-	// cv::Mat H = cv::findHomography(objectPointsPlanar, imagePoints);
 	
+	return H;
+}
+
+cv::Mat findHomographyOpenCV(
+	const std::vector<cv::Vec3f>& objectPoints,
+	const std::vector<cv::Vec2f>& imagePoints)
+{
+	// Project 3D points in 2D
+	std::vector<cv::Vec2f> objectPointsPlanar;
+	objectPointsPlanar.reserve(objectPoints.size());
+	for (unsigned int i = 0; i < objectPoints.size(); i++)
+	{
+		objectPointsPlanar.emplace_back(objectPoints[i](0), objectPoints[i](1));
+	}
+	
+	// As a reference, this is how we could get the homography directly from OpenCV
+	cv::Mat H = cv::findHomography(objectPointsPlanar, imagePoints);
+
+	// Normalize the H matrix
+	H /= H.at<float>(2, 2);
+
 	return H;
 }
 
@@ -455,12 +362,22 @@ int main(int argc, char* argv[])
 	// In the left image, OpenCV finds the chess board upside down, so we reverse the order of image points
 	std::reverse(imagePoints[1].begin(), imagePoints[1].end());
 
-	
+
+	std::cout << "Find homographies:" << std::endl
+	          << "==================" << std::endl;
+	   
 	const auto H1 = findHomography(objectPoints[0], imagePoints[0]);
 	const auto H2 = findHomography(objectPoints[1], imagePoints[1]);
+	const auto H1OpenCV = findHomographyOpenCV(objectPoints[0], imagePoints[0]);
+	const auto H2OpenCV = findHomographyOpenCV(objectPoints[1], imagePoints[1]);
 	
-	std::cout << "View 1 re-projection error = " << computeAvgReProjectionError(objectPoints[0], imagePoints[0], H1) << std::endl;
-	std::cout << "View 2 re-projection error = " << computeAvgReProjectionError(objectPoints[1], imagePoints[1], H2) << std::endl;
+	std::cout << "View 1 re-projection error (in px) = " << computeAvgReProjectionError(objectPoints[0], imagePoints[0], H1)
+			  << "\t OpenCV reference = " << computeAvgReProjectionError(objectPoints[0], imagePoints[0], H1OpenCV) << std::endl;
+
+	std::cout << "View 2 re-projection error (in px) = " << computeAvgReProjectionError(objectPoints[1], imagePoints[1], H2)
+		      << "\t OpenCV reference = " << computeAvgReProjectionError(objectPoints[1], imagePoints[1], H2OpenCV) << std::endl;
+
+	std::cout << std::endl << std::endl;
 
 	const auto A = solveCameraCalibration(H1, H2);
 
@@ -487,56 +404,72 @@ int main(int argc, char* argv[])
 	std::vector<cv::Mat1f> tvecs;
 	std::tie(cameraMatrix, rvecs, tvecs) = bundleAdjustment(objectPoints, imagePoints, A, guessRvecs, guessTvecs);
 	
-	/*
-	cv::Mat cameraMatrix;
-	cv::Mat distCoeffs;
-	std::vector<cv::Mat> rvecs;
-	std::vector<cv::Mat> tvecs;
+	std::cout << "Camera calibration with distortion using OpenCV (for reference)" << std::endl << std::endl;
+	cv::Mat cameraMatrixOpenCV;
+	cv::Mat distCoeffsOpenCV;
+	std::vector<cv::Mat> rvecsOpenCV;
+	std::vector<cv::Mat> tvecsOpenCV;
 	const auto error = cv::calibrateCamera(objectPoints,
 		                                   imagePoints,
 		                                   imageFront.size(),
-		                                   cameraMatrix,
-										   distCoeffs,
-		                                   rvecs,
-		                                   tvecs);
-	*/
+		                                   cameraMatrixOpenCV,
+										   distCoeffsOpenCV,
+		                                   rvecsOpenCV,
+		                                   tvecsOpenCV);
+
+	std::cout << "Results of camera calibration" << std::endl
+		      << "=============================" << std::endl;
 	
 	// Camera matrix M
-	std::cout << "Camera matrix = " << std::endl << " " << cameraMatrix << std::endl << std::endl;
+	std::cout << "Camera matrix = " << std::endl << " " << cameraMatrix << std::endl;
+	std::cout << "OpenCV reference = " << std::endl << " " << cameraMatrixOpenCV << std::endl << std::endl;
 
 	// For a Google Pixel 3, the sensor is 5.76 mm by 4.29 mm
 	const cv::Size2f sensorSize(5.76f, 4.29f);
 	const auto focalLength = focalLengthInMm(cameraMatrix, imageFront.size(), sensorSize);
+	const auto focalLengthOpenCV = focalLengthInMm(cameraMatrixOpenCV, imageFront.size(), sensorSize);
 	std::cout << "Focal length (in mm): width = " << focalLength.first
-	          << " height = " << focalLength.second << std::endl << std::endl;
+	          << " height = " << focalLength.second
+			  << "\t OpenCV reference: width = " << focalLengthOpenCV.first
+			  << " height = " << focalLengthOpenCV.second << std::endl << std::endl;
 
 	// Distortion
-	std::cout << "Distortion coefficients = " << std::endl << " " << distCoeffs << std::endl << std::endl;
+	std::cout << "Distortion coefficients = " << distCoeffs << std::endl;
+	std::cout << "       OpenCV reference = " << distCoeffsOpenCV << std::endl << std::endl;
 
 	for (unsigned int i = 0; i < objectPoints.size(); i++)
 	{
 		std::cout << "View " << i << std::endl;
 
 		// Rotation vector
-		std::cout << "rvec = " << std::endl << " " << rvecs[i] << std::endl << std::endl;
-		cv::Mat1f rvecsMatrix;
-		cv::Rodrigues(rvecs[i], rvecsMatrix);
-		std::cout << "matrix = " << std::endl << " " << rotationX180(rvecsMatrix).t() << std::endl << std::endl;
-		std::cout << "euler = " << std::endl << " " << rotationMatrixToEulerAnglesDeg(rotationX180(rvecsMatrix).t()) << std::endl << std::endl;
+		std::cout << "  rvec = " << rvecs[i].t() << std::endl;
+		std::cout << "OpenCV = " << rvecsOpenCV[i].t() << std::endl << std::endl;
+		// cv::Mat1f rvecsMatrix;
+		// cv::Rodrigues(rvecs[i], rvecsMatrix);
+		// std::cout << "matrix = " << std::endl << " " << rotationX180(rvecsMatrix).t() << std::endl << std::endl;
+		// std::cout << "euler = " << std::endl << " " << rotationMatrixToEulerAnglesDeg(rotationX180(rvecsMatrix).t()) << std::endl << std::endl;
 
 		// Translation vector
-		std::cout << "tvec = " << std::endl << " " << tvecs[i] << std::endl << std::endl;
+		std::cout << "  tvec = " << tvecs[i].t() << std::endl;
+		std::cout << "OpenCV = " << tvecsOpenCV[i].t() << std::endl << std::endl;
 	}
 	
 	// Manually compute the re-projection error
 	const auto rmsError = computeRMSReProjectionError(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvecs, tvecs);
+	const auto rmsErrorOpenCV = computeRMSReProjectionError(objectPoints, imagePoints, cameraMatrixOpenCV, distCoeffsOpenCV, rvecsOpenCV, tvecsOpenCV);
 	const auto avgError = computeAvgReProjectionError(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvecs, tvecs);
+	const auto avgErrorOpenCV = computeAvgReProjectionError(objectPoints, imagePoints, cameraMatrixOpenCV, distCoeffsOpenCV, rvecsOpenCV, tvecsOpenCV);
 	
 	std::cout << "RMS re-projection error = " << rmsError << std::endl;
+	std::cout << "       OpenCV reference = " << rmsErrorOpenCV << std::endl;
 	std::cout << "AVG re-projection error = " << avgError << std::endl;
+	std::cout << "       OpenCV reference = " << avgErrorOpenCV << std::endl;
 
 	drawProjectedCorners(imageFront, objectPoints[0], cameraMatrix, distCoeffs, rvecs[0], tvecs[0], "Images/front_projection.jpg");
 	drawProjectedCorners(imageLeft, objectPoints[1], cameraMatrix, distCoeffs, rvecs[1], tvecs[1], "Images/left_projection.jpg");
+
+	std::cout << "Camera pose:" << std::endl
+	          << "============" << std::endl;
 	cameraPose(rvecs[0], tvecs[0]);
 	cameraPose(rvecs[1], tvecs[1]);
 	

@@ -118,7 +118,8 @@ bundleAdjustment(
 	assert(rvecs.size() == 2);
 	assert(tvecs.size() == 2);
 
-	std::cout << "Bundle adjustment" << std::endl;
+	std::cout << "Bundle adjustment" << std::endl
+	          << "=================" << std::endl;
 
 	std::vector<std::tuple<int, cv::Vec3f, cv::Vec2f>> data;
 
@@ -132,12 +133,29 @@ bundleAdjustment(
 	}
 
 	auto x = matricesToParameters(cameraMatrix, rvecs, tvecs);
+
+	// Empty distortion coefficients
+	const cv::Mat1f distCoeffs(1, 5, 0.0f);
 	
-	solve_least_squares(objective_delta_stop_strategy(1e-7).be_verbose(),
+	// Display error before optimization
+	const auto errorBefore = computeAvgReProjectionError(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvecs, tvecs);
+	std::cout << "Before optimization re-projection error (in px) = " << errorBefore << std::endl;
+
+	// Optimization
+	solve_least_squares(objective_delta_stop_strategy(1e-8).be_verbose(),
 		                residual,
 		                derivative(residual, 1e-5),
 		                data,
 		                x);
+
+	cv::Mat1f optimizedCameraMatrix;
+	std::vector<cv::Mat1f> optimizedRvecs;
+	std::vector<cv::Mat1f> optimizedTvecs;
+	std::tie(optimizedCameraMatrix, optimizedRvecs, optimizedTvecs) = parametersToMatrices(x);
 	
-	return parametersToMatrices(x);
+	// Display error after optimization
+	const auto errorAfter = computeAvgReProjectionError(objectPoints, imagePoints, optimizedCameraMatrix, distCoeffs, optimizedRvecs, optimizedTvecs);
+	std::cout << "After optimization re-projection error (in px) = " << errorAfter << std::endl << std::endl;
+	
+	return { optimizedCameraMatrix, optimizedRvecs, optimizedTvecs };
 }
