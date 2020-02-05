@@ -155,7 +155,7 @@ bundleAdjustment(
 	// Optimization
 	solve_least_squares(objective_delta_stop_strategy(1e-8).be_verbose(),
 		                residual,
-		                derivative(residual, 1e-5),
+		                derivative(residual, 1e-4),
 		                data,
 		                x);
 

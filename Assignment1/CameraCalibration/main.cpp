@@ -463,7 +463,7 @@ int main(int argc, char* argv[])
 	std::cout << "RMS re-projection error = " << rmsError << std::endl;
 	std::cout << "       OpenCV reference = " << rmsErrorOpenCV << std::endl;
 	std::cout << "AVG re-projection error = " << avgError << std::endl;
-	std::cout << "       OpenCV reference = " << avgErrorOpenCV << std::endl;
+	std::cout << "       OpenCV reference = " << avgErrorOpenCV << std::endl << std::endl;
 
 	drawProjectedCorners(imageFront, objectPoints[0], cameraMatrix, distCoeffs, rvecs[0], tvecs[0], "Images/front_projection.jpg");
 	drawProjectedCorners(imageLeft, objectPoints[1], cameraMatrix, distCoeffs, rvecs[1], tvecs[1], "Images/left_projection.jpg");
