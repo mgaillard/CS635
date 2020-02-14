@@ -9,69 +9,9 @@
 #include <opencv2/calib3d.hpp>
 
 #include "Utils.h"
+#include "Reconstruction.h"
 #include "HomographyProblem.h"
 #include "BundleAdjustmentProblem.h"
-
-void findCorners(
-	const cv::Mat& image,
-	std::vector<std::vector<cv::Vec3f>>& objectPoints,
-	std::vector<std::vector<cv::Vec2f>>& imagePoints,
-	const std::string& outputKeypoints
-)
-{
-	// Scale the image when looking for corners
-	// It speeds up computation and works better
-	const float scaleFactor = 0.25;
-	const float scaleFactorInverse = 1.0 / scaleFactor;
-	// Space between two corners (4 in = 0.1016 m)
-	const float squareSize = 0.1016;
-
-	// Read image, convert to gray and resize
-	cv::Mat imageResized, imageGray, imageGrayResized;
-	cv::resize(image, imageResized, cv::Size(0, 0), scaleFactor, scaleFactor);
-	cv::cvtColor(image, imageGray, cv::COLOR_BGR2GRAY);
-	cv::cvtColor(imageResized, imageGrayResized, cv::COLOR_BGR2GRAY);
-
-	// Find corners
-	const cv::Size patternSize(11, 17); // interior number of corners
-	std::vector<cv::Vec2f> corners; // output array for detected corners
-	const auto patternFound = cv::findChessboardCorners(imageGrayResized, patternSize, corners);
-
-	// Scale up corners found
-	cv::transform(corners, corners, cv::Matx23f(scaleFactorInverse, 0.0, 0.0, 0.0, scaleFactorInverse, 0.0));
-
-	if (patternFound)
-	{
-		// Refine corners if found
-		cornerSubPix(imageGray,
-			corners,
-			cv::Size(11 * scaleFactorInverse, 11 * scaleFactorInverse),
-			cv::Size(-1, -1),
-			cv::TermCriteria(cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 30, 0.1));
-
-		// Display corners in an output file
-		cv::Mat newImage = image.clone();
-		cv::drawChessboardCorners(newImage, patternSize, cv::Mat(corners), patternFound);
-		cv::imwrite(outputKeypoints, newImage);
-
-		// Convert to reference points
-		std::vector<cv::Vec3f> currentObjectPoints;
-
-		for (int j = 0; j < patternSize.height; j++)
-		{
-			for (int i = 0; i < patternSize.width; i++)
-			{
-				currentObjectPoints.emplace_back(float(j) * squareSize, float(i) * squareSize, 0.0f);
-			}
-		}
-
-		// Add reference points in the lists
-		objectPoints.push_back(currentObjectPoints);
-		imagePoints.push_back(corners);
-	}
-}
-
-
 
 cv::Mat findHomography(
 	const std::vector<cv::Vec3f>& objectPoints,
@@ -312,45 +252,6 @@ void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
 	std::cout << "T = " << std::endl << T << std::endl;
 }
 
-void drawProjectedCorners(
-	const cv::Mat& image,
-	const std::vector<cv::Vec3f>& objectPoints,
-	const cv::Mat& cameraMatrix,
-	const cv::Mat& distCoeffs,
-	const cv::Mat1f rvec,
-	const cv::Mat1f tvec,
-	const std::string& filename)
-{
-	const std::vector<cv::Vec3f> objectPointsX = {
-		{0 * 0.1016f, 0.0f, 0.0f},
-		{1 * 0.1016f, 0.0f, 0.0f},
-		{2 * 0.1016f, 0.0f, 0.0f},
-		{3 * 0.1016f, 0.0f, 0.0f},
-		{4 * 0.1016f, 0.0f, 0.0f},
-		{5 * 0.1016f, 0.0f, 0.0f},
-	};
-
-
-	std::vector<cv::Vec2f> projectedPoints;
-	cv::projectPoints(objectPoints, rvec, tvec, cameraMatrix, distCoeffs, projectedPoints);
-
-	cv::Mat newImage = image.clone();
-
-	for (const auto p : projectedPoints)
-	{
-		cv::circle(
-			newImage,
-			cv::Point(int(p[0]), int(p[1])),
-			3,
-			cv::Scalar(0, 0, 255),
-			cv::FILLED
-		);
-	}
-
-	cv::imwrite(filename, newImage);
-}
-
-
 void Assignment1()
 {
 	const auto imageFront = cv::imread("Images/front.jpg");
@@ -360,8 +261,10 @@ void Assignment1()
 	std::vector<std::vector<cv::Vec3f>> objectPoints;
 	std::vector<std::vector<cv::Vec2f>> imagePoints;
 
-	findCorners(imageFront, objectPoints, imagePoints, "Images/front_keypoints.jpg");
-	findCorners(imageLeft, objectPoints, imagePoints, "Images/left_keypoints.jpg");
+	// Space between two corners (4 in = 0.1016 m)
+	const auto squareSize = 0.1016f;
+	findCorners(imageFront, objectPoints, imagePoints, "Images/front_keypoints.jpg", cv::Size(11, 17), squareSize);
+	findCorners(imageLeft, objectPoints, imagePoints, "Images/left_keypoints.jpg", cv::Size(11, 17), squareSize);
 	// In the left image, OpenCV finds the chess board upside down, so we reverse the order of image points
 	std::reverse(imagePoints[1].begin(), imagePoints[1].end());
 

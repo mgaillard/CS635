@@ -89,10 +89,12 @@
   <ItemGroup>
     <ClCompile Include="..\external\dlib\all\source.cpp" />
     <ClCompile Include="Assignment1.cpp" />
+    <ClCompile Include="Assignment2.cpp" />
     <ClCompile Include="BundleAdjustmentProblem.cpp" />
     <ClCompile Include="HomographyProblem.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="Reconstruction.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -106,8 +108,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assignment1.h" />
+    <ClInclude Include="Assignment2.h" />
     <ClInclude Include="BundleAdjustmentProblem.h" />
     <ClInclude Include="HomographyProblem.h" />
+    <ClInclude Include="Reconstruction.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
