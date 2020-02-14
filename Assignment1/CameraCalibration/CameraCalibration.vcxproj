@@ -88,6 +88,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\external\dlib\all\source.cpp" />
+    <ClCompile Include="Assignment1.cpp" />
     <ClCompile Include="BundleAdjustmentProblem.cpp" />
     <ClCompile Include="HomographyProblem.cpp" />
     <ClCompile Include="main.cpp" />
@@ -104,6 +105,7 @@
     <QtRcc Include="MainWindow.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Assignment1.h" />
     <ClInclude Include="BundleAdjustmentProblem.h" />
     <ClInclude Include="HomographyProblem.h" />
     <ClInclude Include="Utils.h" />
