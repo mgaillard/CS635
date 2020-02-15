@@ -144,4 +144,7 @@ void Assignment2()
 	);
 	
 	std::cout << point << std::endl;
+
+	// TODO: triangulation
+	// https://answers.opencv.org/question/117141/triangulate-3d-points-from-a-stereo-camera-and-chessboard/
 }

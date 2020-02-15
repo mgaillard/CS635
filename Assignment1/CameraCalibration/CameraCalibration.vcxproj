@@ -92,6 +92,7 @@
     <ClCompile Include="Assignment2.cpp" />
     <ClCompile Include="BundleAdjustmentProblem.cpp" />
     <ClCompile Include="HomographyProblem.cpp" />
+    <ClCompile Include="Keypoints.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="Reconstruction.cpp" />
@@ -111,6 +112,7 @@
     <ClInclude Include="Assignment2.h" />
     <ClInclude Include="BundleAdjustmentProblem.h" />
     <ClInclude Include="HomographyProblem.h" />
+    <ClInclude Include="Keypoints.h" />
     <ClInclude Include="Reconstruction.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
