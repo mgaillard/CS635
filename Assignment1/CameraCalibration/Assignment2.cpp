@@ -130,20 +130,41 @@ void Assignment2()
 		homographies.push_back(computeProjectionMatrix(cameraMatrix, rvecs[i], tvecs[i]));
 	}
 
-	// Hard coded point in 3 views
-	const std::vector<cv::Vec2f> p = {
-		{2629, 939},
-		{2534, 1174},
-		{2632, 966}
+	// Keypoints in each images
+	const std::vector<std::vector<cv::Vec2f>> keypoints =
+	{
+		// First image
+		{
+			{2629, 939}, // top right corner
+			{2532, 613}, // top left corner
+			{1753, 766}, // bottom left corner
+			{1780, 1101} // bottom right corner
+		},
+		// Second image
+		{
+			{2534, 1174}, // top right corner
+			{2450, 834},  // top left corner
+			{1724, 991},  // bottom left corner
+			{1753, 1335}  // bottom right corner
+		},
+		// Third image
+		{
+			{2632, 966}, // top right corner
+			{2438, 659}, // top left corner
+			{1766, 941}, // bottom left corner
+			{1923, 1264} // bottom right corner
+		},
 	};
-	
-	// Solve
-	const auto point = reconstructPointFromViews(
-		{ homographies[0], homographies[1], homographies[2] },
-		{ p[0], p[1], p[2] }
-	);
-	
-	std::cout << point << std::endl;
+
+	for (unsigned int i = 0; i < keypoints.front().size(); i++)
+	{
+		const auto point = reconstructPointFromViews(
+			{ homographies[0], homographies[1], homographies[2] },
+			{ keypoints[0][i], keypoints[1][i], keypoints[2][i] }
+		);
+
+		std::cout << point << std::endl;
+	}	
 
 	// TODO: triangulation
 	// https://answers.opencv.org/question/117141/triangulate-3d-points-from-a-stereo-camera-and-chessboard/
