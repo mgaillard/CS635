@@ -124,3 +124,43 @@ void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
 	// Copy the rotation matrix R
 	// Input the angles (in degrees) in blender 
 }
+
+cv::Vec3f reconstructPointFromViews(
+	const std::vector<cv::Mat1f>& homographies,
+	const std::vector<cv::Vec2f>& points
+)
+{
+	assert(homographies.size() == points.size());
+	
+	const auto numberViews = int(homographies.size());
+
+	// For the linear system Ax=b to solve
+	cv::Mat1f A(3 * numberViews, 3 + numberViews, 0.0f);
+	cv::Mat1f b(6, 1, 0.0f);
+	for (int v = 0; v < numberViews; v++)
+	{
+		// Copy the 3x3 rotation matrix from this view, to the left of the matrix A
+		const auto& R = homographies[v](cv::Range(0, 3), cv::Range(0, 3));
+		A(cv::Range(3 * v, 3 * (v + 1)), cv::Range(0, 3)) = R * 1.f;
+
+		b.at<float>(3 * v) = -homographies[v].at<float>(0, 3);
+		b.at<float>(3 * v + 1) = -homographies[v].at<float>(1, 3);
+		b.at<float>(3 * v + 2) = -homographies[v].at<float>(2, 3);
+
+		// Copy the coordinates of the corresponding point in the matrix A
+		A.at<float>(3 * v    , 3 + v) = -points[v][0];
+		A.at<float>(3 * v + 1, 3 + v) = -points[v][1];
+		A.at<float>(3 * v + 2, 3 + v) = -1.f;
+	}
+
+	// Solve for linear least squares
+	cv::Mat1f x;
+	cv::solve(A, b, x, cv::DECOMP_SVD);
+
+	// Convert to vector
+	return {
+		x.at<float>(0),
+		x.at<float>(1),
+		x.at<float>(2)
+	};
+}

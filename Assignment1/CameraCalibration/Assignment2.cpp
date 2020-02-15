@@ -107,7 +107,7 @@ void Assignment2()
 	
 	// Since images are undistorted, we can now set the distortion coefficients to zero
 	distCoeffs.setTo(0.0f);
-
+	
 	std::cout << "Reprojecting undistorted images" << std::endl;
 	for (unsigned int i = 0; i < images.size(); i++)
 	{
@@ -119,7 +119,29 @@ void Assignment2()
 			                 tvecs[i],
 			                 directory + "reprojections/" + imageFiles[i] + ".jpg");
 	}
-
-	// Pose of the first view
+	
+	// Pose of the first view in world coordinates
 	cameraPose(rvecs[0], tvecs[0]);
+	
+	// Homography matrices of each views
+	std::vector<cv::Mat1f> homographies;
+	for (unsigned int i = 0; i < images.size(); i++)
+	{
+		homographies.push_back(computeProjectionMatrix(cameraMatrix, rvecs[i], tvecs[i]));
+	}
+
+	// Hard coded point in 3 views
+	const std::vector<cv::Vec2f> p = {
+		{2629, 939},
+		{2534, 1174},
+		{2632, 966}
+	};
+	
+	// Solve
+	const auto point = reconstructPointFromViews(
+		{ homographies[0], homographies[1], homographies[2] },
+		{ p[0], p[1], p[2] }
+	);
+	
+	std::cout << point << std::endl;
 }

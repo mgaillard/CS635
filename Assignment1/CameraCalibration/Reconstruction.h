@@ -24,3 +24,8 @@ void drawProjectedCorners(
 );
 
 void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec);
+
+cv::Vec3f reconstructPointFromViews(
+	const std::vector<cv::Mat1f>& homographies,
+	const std::vector<cv::Vec2f>& points
+);

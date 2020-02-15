@@ -8,10 +8,33 @@
 
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m)
 {
+	assert(H.rows == 3);
+	assert(H.cols == 3);
+	
 	cv::Mat1f point(3, 1);
 	point.at<float>(0) = m(0);
 	point.at<float>(1) = m(1);
 	point.at<float>(2) = 1.0f;
+
+	cv::Mat1f result = H * point;
+
+	// Divide by W
+	return cv::Vec2f(
+		result.at<float>(0) / result.at<float>(2),
+		result.at<float>(1) / result.at<float>(2)
+	);
+}
+
+cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec4f& m)
+{
+	assert(H.rows == 3);
+	assert(H.cols == 4);
+
+	cv::Mat1f point(4, 1);
+	point.at<float>(0) = m[0];
+	point.at<float>(1) = m[1];
+	point.at<float>(2) = m[2];
+	point.at<float>(3) = 1.0f;
 
 	cv::Mat1f result = H * point;
 

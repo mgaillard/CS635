@@ -3,6 +3,7 @@
 #include <opencv2/core/core.hpp>
 
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m);
+cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec4f& m);
 
 cv::Mat computeProjectionMatrix(cv::Mat cameraMatrix, cv::Mat rvec, cv::Mat tvec);
 
