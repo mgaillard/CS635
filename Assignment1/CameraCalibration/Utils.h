@@ -55,3 +55,5 @@ double computeAvgReProjectionError(
 	const std::vector<cv::Vec3f>& objectPoints,
 	const std::vector<cv::Vec2f>& imagePoints,
 	const cv::Mat& H);
+
+std::pair<float, float> focalLengthInMm(const cv::Mat1f& cameraMatrix, const cv::Size& imageSize, const cv::Size2f& sensorSize);

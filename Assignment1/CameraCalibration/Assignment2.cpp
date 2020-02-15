@@ -9,6 +9,7 @@
 #include <opencv2/calib3d.hpp>
 
 #include "Reconstruction.h"
+#include "Utils.h"
 
 void Assignment2()
 {
@@ -75,6 +76,13 @@ void Assignment2()
 	std::cout << "Calibration error = " << error << std::endl;
 
 	std::cout << "Camera matrix = " << std::endl << " " << cameraMatrix << std::endl;
+
+	// For a Google Pixel 3, the sensor is 5.76 mm by 4.29 mm
+	const cv::Size2f sensorSize(5.76f, 4.29f);
+	const auto focalLength = focalLengthInMm(cameraMatrix, imagesRaw.front().size(), sensorSize);
+	std::cout << "Focal length (in mm): width = " << focalLength.first
+		      << " height = " << focalLength.second << std::endl << std::endl;
+	
 	std::cout << "Distortion coefficients = " << distCoeffs << std::endl;
 
 	for (unsigned int i = 0; i < objectPoints.size(); i++)
@@ -87,7 +95,7 @@ void Assignment2()
 		// Translation vector
 		std::cout << "  tvec = " << tvecs[i].t() << std::endl;
 	}
-
+	
 	// Compute undistorted images
 	std::cout << "Undistorting images" << std::endl;
 	std::vector<cv::Mat> images(imagesRaw.size());
@@ -111,4 +119,7 @@ void Assignment2()
 			                 tvecs[i],
 			                 directory + "reprojections/" + imageFiles[i] + ".jpg");
 	}
+
+	// Pose of the first view
+	cameraPose(rvecs[0], tvecs[0]);
 }

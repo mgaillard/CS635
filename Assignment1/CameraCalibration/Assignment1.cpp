@@ -229,29 +229,6 @@ std::pair<cv::Mat1f, cv::Mat1f> computeExtrinsicParameters(const cv::Mat1f& homo
 	return std::make_pair(R, t);
 }
 
-std::pair<float, float> focalLengthInMm(const cv::Mat1f& cameraMatrix, const cv::Size& imageSize, const cv::Size2f& sensorSize)
-{
-	return {
-		cameraMatrix.at<float>(0, 0) * sensorSize.width / imageSize.width,
-		cameraMatrix.at<float>(1, 1) * sensorSize.height / imageSize.height
-	};
-}
-
-void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
-{
-	cv::Mat1f R;
-	cv::Rodrigues(rvec, R); // R is 3x3
-
-	auto invTvec = -R.t() * tvec; // translation of inverse
-	R = rotationX180(R).t();  // rotation of inverse
-
-	cv::Mat1f T = cv::Mat1f::eye(4, 4); // T is 4x4
-	T(cv::Range(0, 3), cv::Range(0, 3)) = R * 1; // copies R into T
-	T(cv::Range(0, 3), cv::Range(3, 4)) = invTvec * 1; // copies tvec into T
-
-	std::cout << "T = " << std::endl << T << std::endl;
-}
-
 void Assignment1()
 {
 	const auto imageFront = cv::imread("Images/front.jpg");
@@ -335,9 +312,9 @@ void Assignment1()
 	const auto focalLength = focalLengthInMm(cameraMatrix, imageFront.size(), sensorSize);
 	const auto focalLengthOpenCV = focalLengthInMm(cameraMatrixOpenCV, imageFront.size(), sensorSize);
 	std::cout << "Focal length (in mm): width = " << focalLength.first
-		<< " height = " << focalLength.second
-		<< "\t OpenCV reference: width = " << focalLengthOpenCV.first
-		<< " height = " << focalLengthOpenCV.second << std::endl << std::endl;
+		      << " height = " << focalLength.second
+		      << "\t OpenCV reference: width = " << focalLengthOpenCV.first
+		      << " height = " << focalLengthOpenCV.second << std::endl << std::endl;
 
 	// Distortion
 	std::cout << "Distortion coefficients = " << distCoeffs << std::endl;

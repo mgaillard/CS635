@@ -234,3 +234,11 @@ double computeAvgReProjectionError(
 
 	return meanError / objectPoints.size();
 }
+
+std::pair<float, float> focalLengthInMm(const cv::Mat1f& cameraMatrix, const cv::Size& imageSize, const cv::Size2f& sensorSize)
+{
+	return {
+		cameraMatrix.at<float>(0, 0) * sensorSize.width / imageSize.width,
+		cameraMatrix.at<float>(1, 1) * sensorSize.height / imageSize.height
+	};
+}

@@ -6,6 +6,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d.hpp>
+#include "Utils.h"
 
 void findCorners(
 	const cv::Mat& image,
@@ -102,4 +103,24 @@ void drawProjectedCorners(
 	}
 
 	cv::imwrite(filename, newImage);
+}
+
+void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
+{
+	cv::Mat1f R;
+	cv::Rodrigues(rvec, R); // R is 3x3
+
+	auto invTvec = -R.t() * tvec; // translation of inverse
+	R = rotationX180(R.t());  // rotation of inverse
+
+	cv::Mat1f T = cv::Mat1f::eye(4, 4); // T is 4x4
+	T(cv::Range(0, 3), cv::Range(0, 3)) = R.t() * 1; // copies R into T
+	T(cv::Range(0, 3), cv::Range(3, 4)) = invTvec * 1; // copies tvec into T
+
+	std::cout << "T = " << std::endl << T << std::endl;
+
+	// To get the Euler angles (XYZ)
+	// Go to https://www.andre-gaschler.com/rotationconverter/
+	// Copy the rotation matrix R
+	// Input the angles (in degrees) in blender 
 }

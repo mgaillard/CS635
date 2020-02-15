@@ -22,3 +22,5 @@ void drawProjectedCorners(
 	const cv::Mat1f tvec,
 	const std::string& filename
 );
+
+void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec);
