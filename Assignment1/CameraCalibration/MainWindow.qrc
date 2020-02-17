@@ -1,7 +1,10 @@
 <RCC>
     <qresource prefix="/MainWindow">
-        <file>Images/front.jpg</file>
-        <file>Images/left.jpg</file>
-        <file>Images/right.jpg</file>
+        <file>Shaders/physical_camera_frustum_fs.glsl</file>
+        <file>Shaders/physical_camera_frustum_vs.glsl</file>
+        <file>Shaders/physical_camera_image_fs.glsl</file>
+        <file>Shaders/physical_camera_image_vs.glsl</file>
+        <file>Shaders/mesh_fs.glsl</file>
+        <file>Shaders/mesh_vs.glsl</file>
     </qresource>
 </RCC>

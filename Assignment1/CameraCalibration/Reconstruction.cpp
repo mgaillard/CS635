@@ -105,7 +105,7 @@ void drawProjectedCorners(
 	cv::imwrite(filename, newImage);
 }
 
-void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
+cv::Mat1f cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
 {
 	cv::Mat1f R;
 	cv::Rodrigues(rvec, R); // R is 3x3
@@ -117,12 +117,55 @@ void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec)
 	T(cv::Range(0, 3), cv::Range(0, 3)) = R.t() * 1; // copies R into T
 	T(cv::Range(0, 3), cv::Range(3, 4)) = invTvec * 1; // copies tvec into T
 
-	std::cout << "T = " << std::endl << T << std::endl;
-
 	// To get the Euler angles (XYZ)
 	// Go to https://www.andre-gaschler.com/rotationconverter/
 	// Copy the rotation matrix R
-	// Input the angles (in degrees) in blender 
+	// Input the angles (in degrees) in blender
+	
+	return T;
+}
+
+cv::Vec3f cameraPoseVectorX(const cv::Mat1f& rvec)
+{
+	cv::Mat1f R;
+	cv::Rodrigues(rvec, R); // R is 3x3
+
+	// X is the first column of the R transposed matrix
+	cv::Mat1f T = R.t() * 1.f; // copies R into T
+
+	return {
+		T.at<float>(0, 0),
+		T.at<float>(1, 0),
+		T.at<float>(2, 0)
+	};
+}
+
+std::tuple<QVector3D, QVector3D, QVector3D> cameraEyeAtUpFromPose(
+	const cv::Mat1f& cameraMatrix,
+	const cv::Mat1f& rvec,
+	const cv::Mat1f& tvec
+)
+{
+	const auto homography = computeProjectionMatrix(cameraMatrix, rvec, tvec);
+	const auto pose = cameraPose(rvec, tvec);
+
+	// Find position of the camera in world coordinates
+	const QVector3D eye(
+		pose.at<float>(0, 3),
+		pose.at<float>(1, 3),
+		pose.at<float>(2, 3)
+	);
+
+	// Find the look at point (intersection between optical center and plane z=0)
+	const auto at = convertToQt(lookAtPoint(homography, cameraMatrix));
+
+	// Get the X vector of the camera in world coordinates
+	const QVector3D x = convertToQt(cameraPoseVectorX(rvec));
+	// From the X vector, we can get the up vector
+	const QVector3D eyeToAt = (at - eye).normalized();
+	const QVector3D up = QVector3D::crossProduct(x, eyeToAt).normalized();
+
+	return std::make_tuple(eye, at, up);
 }
 
 cv::Vec3f reconstructPointFromViews(
@@ -162,5 +205,40 @@ cv::Vec3f reconstructPointFromViews(
 		x.at<float>(0),
 		x.at<float>(1),
 		x.at<float>(2)
+	};
+}
+
+cv::Vec3f lookAtPoint(const cv::Mat1f& homography, const cv::Mat1f& cameraMatrix)
+{
+	assert(homography.rows == 3);
+	assert(homography.cols == 4);
+
+	// For the linear system Ax=b to solve
+	cv::Mat1f A(3, 3, 0.0f);
+	A.at<float>(0, 0) = homography.at<float>(0, 0);
+	A.at<float>(0, 1) = homography.at<float>(0, 1);
+	A.at<float>(1, 0) = homography.at<float>(1, 0);
+	A.at<float>(1, 1) = homography.at<float>(1, 1);
+	A.at<float>(2, 0) = homography.at<float>(2, 0);
+	A.at<float>(2, 1) = homography.at<float>(2, 1);
+
+	A.at<float>(0, 2) = -cameraMatrix.at<float>(0, 2);
+	A.at<float>(1, 2) = -cameraMatrix.at<float>(1, 2);
+	A.at<float>(2, 2) = -1.0f;
+
+	cv::Mat1f b(3, 1, 0.0f);
+	b.at<float>(0) = -homography.at<float>(0, 3);
+	b.at<float>(1) = -homography.at<float>(1, 3);
+	b.at<float>(2) = -homography.at<float>(2, 3);
+
+	// Solve for linear least squares
+	cv::Mat1f x;
+	cv::solve(A, b, x, cv::DECOMP_SVD);
+
+	// Convert to vector
+	return {
+		x.at<float>(0),
+		x.at<float>(1),
+		0.0f
 	};
 }

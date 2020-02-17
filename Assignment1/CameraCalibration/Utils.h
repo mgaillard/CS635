@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QImage>
+#include <QVector3D>
+
 #include <opencv2/core/core.hpp>
 
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m);
@@ -58,3 +61,9 @@ double computeAvgReProjectionError(
 	const cv::Mat& H);
 
 std::pair<float, float> focalLengthInMm(const cv::Mat1f& cameraMatrix, const cv::Size& imageSize, const cv::Size2f& sensorSize);
+
+QImage convertToQtImage(cv::InputArray input);
+
+QVector3D convertToQt(const cv::Vec3f& v);
+
+cv::Mat translateImage(const cv::Mat& image, float x, float y);

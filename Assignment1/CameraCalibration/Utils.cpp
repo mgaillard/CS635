@@ -4,6 +4,8 @@
 
 #include <QtMath>
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m)
@@ -264,4 +266,43 @@ std::pair<float, float> focalLengthInMm(const cv::Mat1f& cameraMatrix, const cv:
 		cameraMatrix.at<float>(0, 0) * sensorSize.width / imageSize.width,
 		cameraMatrix.at<float>(1, 1) * sensorSize.height / imageSize.height
 	};
+}
+
+QImage convertToQtImage(cv::InputArray input)
+{
+	assert(input.type() == CV_8UC3);
+
+	const cv::Mat view(input.getMat());
+	cv::Mat rgbImage;
+	cv::cvtColor(view, rgbImage, cv::COLOR_BGR2RGB);
+
+	const QImage imageView(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step, QImage::Format_RGB888);
+
+	return imageView.convertToFormat(QImage::Format_RGB32);
+}
+
+QVector3D convertToQt(const cv::Vec3f& v)
+{
+	return {
+		v[0],
+		v[1],
+		v[2]
+	};
+}
+
+cv::Mat translateImage(const cv::Mat& image, float x, float y)
+{
+	const cv::Scalar black(0.0, 0.0, 0.0, 255.0);
+	const cv::Mat translationMat = (cv::Mat_<double>(2, 3) << 1, 0, x, 0, 1, y);
+
+	cv::Mat translatedImage;
+	cv::warpAffine(image,
+		           translatedImage,
+		           translationMat,
+		           image.size(),
+		           cv::INTER_LINEAR,
+		           cv::BORDER_CONSTANT,
+		           black);
+
+	return translatedImage.clone();
 }

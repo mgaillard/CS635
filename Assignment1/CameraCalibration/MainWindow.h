@@ -8,8 +8,21 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(QWidget *parent = Q_NULLPTR);
+	explicit MainWindow(QWidget *parent = Q_NULLPTR);
 
+public slots:
+	void setupScene();
+
+	void selectCameraClicked(int camera);
+	
 private:
-	Ui::MainWindowClass ui;
+	void setupUi();
+
+	void setupPattern();
+	
+	void setupCameras();
+	
+	Ui::MainWindowClass m_ui;
+
+	std::vector<Camera> m_cameras;
 };

@@ -1,29 +1,212 @@
-<UI version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>MainWindowClass</class>
- <widget class="QMainWindow" name="MainWindowClass" >
-  <property name="objectName" >
-   <string notr="true">MainWindowClass</string>
-  </property>
-  <property name="geometry" >
+ <widget class="QMainWindow" name="MainWindowClass">
+  <property name="geometry">
    <rect>
-	<x>0</x>
-	<y>0</y>
-	<width>600</width>
-	<height>400</height>
+    <x>0</x>
+    <y>0</y>
+    <width>1026</width>
+    <height>827</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QMenuBar" name="menuBar" />
-  <widget class="QToolBar" name="mainToolBar" />
-  <widget class="QWidget" name="centralWidget" />
-  <widget class="QStatusBar" name="statusBar" />
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="ViewerWidget" name="viewerWidget">
+      <property name="minimumSize">
+       <size>
+        <width>1008</width>
+        <height>756</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1026</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuCamera">
+    <property name="title">
+     <string>Camera</string>
+    </property>
+    <addaction name="actionSelect_camera_1"/>
+    <addaction name="actionSelect_camera_2"/>
+    <addaction name="actionSelect_camera_3"/>
+    <addaction name="actionSelect_camera_4"/>
+    <addaction name="actionSelect_camera_5"/>
+    <addaction name="actionSelect_camera_6"/>
+    <addaction name="actionSelect_camera_7"/>
+    <addaction name="actionSelect_camera_8"/>
+    <addaction name="actionSelect_camera_9"/>
+    <addaction name="actionSelect_camera_10"/>
+    <addaction name="actionSelect_camera_11"/>
+    <addaction name="actionSelect_camera_12"/>
+    <addaction name="actionSelect_camera_13"/>
+    <addaction name="actionSelect_camera_14"/>
+    <addaction name="actionSelect_camera_15"/>
+    <addaction name="actionSelect_camera_16"/>
+   </widget>
+   <addaction name="menuCamera"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionSelect_camera_1">
+   <property name="text">
+    <string>Select camera 1</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+1</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_2">
+   <property name="text">
+    <string>Select camera 2</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+2</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_3">
+   <property name="text">
+    <string>Select camera 3</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+3</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_4">
+   <property name="text">
+    <string>Select camera 4</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+4</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_5">
+   <property name="text">
+    <string>Select camera 5</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+5</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_6">
+   <property name="text">
+    <string>Select camera 6</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+6</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_7">
+   <property name="text">
+    <string>Select camera 7</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+7</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_8">
+   <property name="text">
+    <string>Select camera 8</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+8</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_9">
+   <property name="text">
+    <string>Select camera 9</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+9</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_10">
+   <property name="text">
+    <string>Select camera 10</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+1</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_11">
+   <property name="text">
+    <string>Select camera 11</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+2</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_12">
+   <property name="text">
+    <string>Select camera 12</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+3</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_13">
+   <property name="text">
+    <string>Select camera 13</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+4</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_14">
+   <property name="text">
+    <string>Select camera 14</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+5</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_15">
+   <property name="text">
+    <string>Select camera 15</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+6</string>
+   </property>
+  </action>
+  <action name="actionSelect_camera_16">
+   <property name="text">
+    <string>Select camera 16</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+7</string>
+   </property>
+  </action>
  </widget>
- <layoutDefault spacing="6" margin="11" />
- <pixmapfunction></pixmapfunction>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ViewerWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>ViewerWidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
-   <include location="MainWindow.qrc"/>
+  <include location="MainWindow.qrc"/>
  </resources>
  <connections/>
-</UI>
+</ui>

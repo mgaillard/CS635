@@ -43,11 +43,11 @@
   </ImportGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <QtInstall>Qt 5.12.6</QtInstall>
-    <QtModules>core;gui;opengl;widgets</QtModules>
+    <QtModules>core;gui;opengl;openglextensions;widgets</QtModules>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <QtInstall>Qt 5.12.6</QtInstall>
-    <QtModules>core;gui;opengl;widgets</QtModules>
+    <QtModules>core;gui;opengl;openglextensions;widgets</QtModules>
   </PropertyGroup>
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
     <Import Project="$(QtMsBuild)\qt.props" />
@@ -91,12 +91,17 @@
     <ClCompile Include="Assignment1.cpp" />
     <ClCompile Include="Assignment2.cpp" />
     <ClCompile Include="BundleAdjustmentProblem.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="HomographyProblem.cpp" />
     <ClCompile Include="Keypoints.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="MeshObject.cpp" />
+    <ClCompile Include="PhysicalCamera.cpp" />
     <ClCompile Include="Reconstruction.cpp" />
+    <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="ViewerWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="MainWindow.h" />
@@ -111,10 +116,15 @@
     <ClInclude Include="Assignment1.h" />
     <ClInclude Include="Assignment2.h" />
     <ClInclude Include="BundleAdjustmentProblem.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="HomographyProblem.h" />
     <ClInclude Include="Keypoints.h" />
+    <ClInclude Include="MeshObject.h" />
+    <ClInclude Include="PhysicalCamera.h" />
     <ClInclude Include="Reconstruction.h" />
+    <ClInclude Include="Renderable.h" />
     <ClInclude Include="Utils.h" />
+    <QtMoc Include="ViewerWidget.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

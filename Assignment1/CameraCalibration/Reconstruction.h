@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <QVector3D>
+
 #include <opencv2/core/core.hpp>
 
 void findCorners(
@@ -23,9 +25,19 @@ void drawProjectedCorners(
 	const std::string& filename
 );
 
-void cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec);
+cv::Mat1f cameraPose(const cv::Mat1f& rvec, const cv::Mat1f& tvec);
+
+cv::Vec3f cameraPoseVectorX(const cv::Mat1f& rvec);
+
+std::tuple<QVector3D, QVector3D, QVector3D> cameraEyeAtUpFromPose(
+	const cv::Mat1f& cameraMatrix,
+	const cv::Mat1f& rvec,
+	const cv::Mat1f& tvec
+);
 
 cv::Vec3f reconstructPointFromViews(
 	const std::vector<cv::Mat1f>& homographies,
 	const std::vector<cv::Vec2f>& points
 );
+
+cv::Vec3f lookAtPoint(const cv::Mat1f& homography, const cv::Mat1f& cameraMatrix);
