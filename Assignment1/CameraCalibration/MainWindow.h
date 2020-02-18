@@ -29,6 +29,8 @@ private:
 	
 	void setupCameras();
 
+	void setupPhysicalCameras();
+
 	void reconstructPoints();
 	
 	Ui::MainWindowClass m_ui;

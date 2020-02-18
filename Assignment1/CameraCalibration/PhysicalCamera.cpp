@@ -62,6 +62,9 @@ void PhysicalCamera::cleanup()
 void PhysicalCamera::paint(QOpenGLContext* context, const Camera& camera)
 {
 	auto f = context->versionFunctions<QOpenGLFunctions_4_3_Core>();
+
+	// The camera image is just a transparent texture over the scene, no need for the depth buffer
+	f->glDisable(GL_DEPTH_TEST);
 	
 	if (m_imageProgram && m_imageNumberVertices > 0)
 	{
@@ -121,6 +124,9 @@ void PhysicalCamera::paint(QOpenGLContext* context, const Camera& camera)
 
 		m_frustumProgram->release();
 	}
+
+	// Reactivate the depth buffer
+	f->glEnable(GL_DEPTH_TEST);
 }
 
 void PhysicalCamera::computeFrustumLocation(

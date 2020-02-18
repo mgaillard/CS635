@@ -12,7 +12,7 @@ public:
 	~KeypointsDockWidget();
 
 public slots:
-	void addKeypoint(qreal x, qreal y);
+	void addKeypoint(int image, qreal x, qreal y);
 
 private:
 	Ui::KeypointsDockWidget m_ui;

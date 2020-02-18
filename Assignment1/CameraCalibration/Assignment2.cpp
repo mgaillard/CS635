@@ -11,6 +11,10 @@
 #include "Reconstruction.h"
 #include "Utils.h"
 
+
+/**
+ * \brief This function is deprecated, most of the code has been moved to MainWindow
+ */
 void Assignment2()
 {
 	const cv::Size chessboardSize(6, 9);
@@ -164,7 +168,7 @@ void Assignment2()
 		);
 
 		std::cout << point << std::endl;
-	}	
+	}
 
 	// TODO: triangulation
 	// https://answers.opencv.org/question/117141/triangulate-3d-points-from-a-stereo-camera-and-chessboard/

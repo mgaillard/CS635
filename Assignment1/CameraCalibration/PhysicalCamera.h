@@ -11,8 +11,8 @@ class PhysicalCamera final : public Renderable
 {
 public:
 	PhysicalCamera(const Camera& camera,
-		float focalLength,
-		QImage image);
+		           float focalLength,
+		           QImage image);
 
 	~PhysicalCamera() = default;
 

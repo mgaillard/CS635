@@ -6,5 +6,7 @@
         <file>Shaders/physical_camera_image_vs.glsl</file>
         <file>Shaders/mesh_fs.glsl</file>
         <file>Shaders/mesh_vs.glsl</file>
+        <file>Shaders/point_fs.glsl</file>
+        <file>Shaders/point_vs.glsl</file>
     </qresource>
 </RCC>

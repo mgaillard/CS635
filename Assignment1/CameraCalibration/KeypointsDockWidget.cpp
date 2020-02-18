@@ -11,9 +11,9 @@ KeypointsDockWidget::~KeypointsDockWidget()
 	
 }
 
-void KeypointsDockWidget::addKeypoint(qreal x, qreal y)
+void KeypointsDockWidget::addKeypoint(int image, qreal x, qreal y)
 {
-	const auto keypointString = QString::number(x) + ", " + QString::number(y);
+	const auto keypointString = QString::number(image) + " " + QString::number(x) + " " + QString::number(y);
 	
 	m_ui.textEdit->append(keypointString);
 }

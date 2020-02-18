@@ -14,6 +14,7 @@
 #include "Keypoints.h"
 #include "MeshObject.h"
 #include "PhysicalCamera.h"
+#include "PointObject.h"
 #include "Reconstruction.h"
 #include "Utils.h"
 
@@ -32,6 +33,7 @@ void MainWindow::setupScene()
 {
 	setupPattern();
 	setupCameras();
+	setupPhysicalCameras();
 	reconstructPoints();
 
 	selectCameraClicked(0);
@@ -80,7 +82,7 @@ void MainWindow::viewDoubleClicked(qreal x, qreal y)
 	const auto imageShiftWidth = imageCenterWidth - (originalImageWidth / 2.f);
 	const auto imageShiftHeight = imageCenterHeight - (originalImageHeight / 2.f);
 
-	m_keypointsDock->addKeypoint(imageX + imageShiftWidth, imageY + imageShiftHeight);
+	m_keypointsDock->addKeypoint(m_currentCamera, imageX + imageShiftWidth, imageY + imageShiftHeight);
 }
 
 void MainWindow::setupUi()
@@ -188,9 +190,6 @@ void MainWindow::setupCameras()
 					chessboardSquareSide);
 	}
 
-	const auto imageWidth = m_imagesRaw.front().cols;
-	const auto imageHeight = m_imagesRaw.front().rows;
-
 	// Calibration cameras
 	cv::Mat1f distCoeffs;
 	const auto error = cv::calibrateCamera(objectPoints,
@@ -211,6 +210,9 @@ void MainWindow::setupCameras()
 	// Since images are undistorted, we can now set the distortion coefficients to zero
 	distCoeffs.setTo(0.0f);
 
+	const auto imageWidth = m_imagesRaw.front().cols;
+	const auto imageHeight = m_imagesRaw.front().rows;
+
 	// Compute aspect ratio from images
 	const auto aspectRatio = float(imageWidth) / float(imageHeight);
 
@@ -218,12 +220,6 @@ void MainWindow::setupCameras()
 	const cv::Size2f sensorSize(5.76f, 4.29f);
 	const auto focalLength = focalLengthInMm(m_cameraMatrix, m_imagesRaw.front().size(), sensorSize);
 	const auto fovy = qRadiansToDegrees(2.0f * std::atan(sensorSize.height / (2.0f * focalLength.second)));
-
-	// Shift image according to the center of the optical axis in the image
-	const float imageCenterWidth = getImageCenterX(m_cameraMatrix);
-	const float imageCenterHeight = getImageCenterY(m_cameraMatrix);
-	const float imageShiftWidth = imageWidth / 2 - imageCenterWidth;
-	const float imageShiftHeight = imageHeight / 2 - imageCenterHeight;
 
 	// Pose of cameras in world coordinates
 	for (unsigned int i = 0; i < m_imagesRaw.size(); i++)
@@ -243,16 +239,32 @@ void MainWindow::setupCameras()
 
 		// Add the camera to the list of cameras
 		m_cameras.push_back(camera);
-				
+	}
+}
+
+void MainWindow::setupPhysicalCameras()
+{
+	const auto imageWidth = m_imagesRaw.front().cols;
+	const auto imageHeight = m_imagesRaw.front().rows;
+	
+	// Shift image according to the center of the optical axis in the image
+	const float imageCenterWidth = getImageCenterX(m_cameraMatrix);
+	const float imageCenterHeight = getImageCenterY(m_cameraMatrix);
+	const float imageShiftWidth = imageWidth / 2 - imageCenterWidth;
+	const float imageShiftHeight = imageHeight / 2 - imageCenterHeight;
+
+	// Pose of cameras in world coordinates
+	for (unsigned int i = 0; i < m_cameras.size(); i++)
+	{
 		// Shift the image according to the optical center
 		const auto shiftedImage = translateImage(m_images[i], imageShiftWidth, imageShiftHeight);
 
 		// Add the physical camera to the view
 		auto physicalCamera = std::make_unique<PhysicalCamera>(
-			camera,
+			m_cameras[i],
 			0.05f,
 			convertToQtImage(shiftedImage)
-		);
+			);
 		m_ui.viewerWidget->addObject(std::move(physicalCamera));
 	}
 }
@@ -270,6 +282,7 @@ void MainWindow::reconstructPoints()
 		homographies.push_back(computeProjectionMatrix(m_cameraMatrix, m_rvecs[i], m_tvecs[i]));
 	}
 
+	std::vector<QVector3D> points;
 	for (unsigned int i = 0; i < keypoints.size(); i++)
 	{
 		std::vector<cv::Mat1f> keypointHomographies;
@@ -285,8 +298,11 @@ void MainWindow::reconstructPoints()
 		
 		const auto point = reconstructPointFromViews(keypointHomographies, keypointPoints);
 
-		std::cout << point << std::endl;
+		points.push_back(convertToQt(point));
 	}
+
+	auto pointObjects = std::make_unique<PointObject>(QMatrix4x4(), points);
+	m_ui.viewerWidget->addObject(std::move(pointObjects));
 
 	// Display points in 2D views
 

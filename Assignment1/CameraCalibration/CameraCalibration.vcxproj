@@ -99,6 +99,7 @@
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="MeshObject.cpp" />
     <ClCompile Include="PhysicalCamera.cpp" />
+    <ClCompile Include="PointObject.cpp" />
     <ClCompile Include="Reconstruction.cpp" />
     <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="Utils.cpp" />
@@ -124,6 +125,7 @@
     <QtMoc Include="KeypointsDockWidget.h" />
     <ClInclude Include="MeshObject.h" />
     <ClInclude Include="PhysicalCamera.h" />
+    <ClInclude Include="PointObject.h" />
     <ClInclude Include="Reconstruction.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Utils.h" />
