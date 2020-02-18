@@ -59,7 +59,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <AdditionalIncludeDirectories>..\external;$(OPENCVDIR)\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\external;$(OPENCVDIR)\build\include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -76,7 +76,7 @@
       <DebugInformationFormat />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <AdditionalIncludeDirectories>..\external;$(OPENCVDIR)\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\external;$(OPENCVDIR)\build\include;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,6 +94,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="HomographyProblem.cpp" />
     <ClCompile Include="Keypoints.cpp" />
+    <ClCompile Include="KeypointsDockWidget.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="MeshObject.cpp" />
@@ -107,6 +108,7 @@
     <QtMoc Include="MainWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtUic Include="KeypointsDockWidget.ui" />
     <QtUic Include="MainWindow.ui" />
   </ItemGroup>
   <ItemGroup>
@@ -119,6 +121,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="HomographyProblem.h" />
     <ClInclude Include="Keypoints.h" />
+    <QtMoc Include="KeypointsDockWidget.h" />
     <ClInclude Include="MeshObject.h" />
     <ClInclude Include="PhysicalCamera.h" />
     <ClInclude Include="Reconstruction.h" />

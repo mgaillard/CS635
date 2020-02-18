@@ -141,3 +141,11 @@ void ViewerWidget::wheelEvent(QWheelEvent* event)
 
 	update();
 }
+
+void ViewerWidget::mouseDoubleClickEvent(QMouseEvent* event)
+{
+	// Where the user double clicks
+	const auto pos = event->localPos();
+
+	emit mouseDoubleClicked(pos.x(), pos.y());
+}

@@ -67,3 +67,7 @@ QImage convertToQtImage(cv::InputArray input);
 QVector3D convertToQt(const cv::Vec3f& v);
 
 cv::Mat translateImage(const cv::Mat& image, float x, float y);
+
+float getImageCenterX(const cv::Mat1f& cameraMatrix);
+
+float getImageCenterY(const cv::Mat1f& cameraMatrix);

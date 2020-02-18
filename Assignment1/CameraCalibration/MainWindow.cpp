@@ -11,13 +11,16 @@
 #include <opencv2/calib3d.hpp>
 
 
+#include "Keypoints.h"
 #include "MeshObject.h"
 #include "PhysicalCamera.h"
 #include "Reconstruction.h"
 #include "Utils.h"
 
 MainWindow::MainWindow(QWidget *parent)
-	: QMainWindow(parent)
+	: QMainWindow(parent),
+	m_directory("Images/3DScene/"),
+	m_currentCamera(0)
 {
 	setupUi();
 
@@ -29,6 +32,9 @@ void MainWindow::setupScene()
 {
 	setupPattern();
 	setupCameras();
+	reconstructPoints();
+
+	selectCameraClicked(0);
 }
 
 void MainWindow::selectCameraClicked(int camera)
@@ -36,15 +42,57 @@ void MainWindow::selectCameraClicked(int camera)
 	if (camera >= 0 && camera < m_cameras.size())
 	{
 		// Set the camera in the viewer
-		const OrbitCamera orbitCamera(m_cameras[camera]);
+		m_currentCamera = camera;
+		const OrbitCamera orbitCamera(m_cameras[m_currentCamera]);
 		m_ui.viewerWidget->setCamera(orbitCamera);
 	}
+}
+
+void MainWindow::viewDoubleClicked(qreal x, qreal y)
+{
+	// Get the parameters of the current image, with the current camera
+	const auto& currentImage = m_images[m_currentCamera];
+	const auto originalImageWidth = float(currentImage.cols);
+	const auto originalImageHeight = float(currentImage.rows);
+	
+	// Aspect ratio of the image
+	const auto aspectRatio = float(originalImageWidth) / float(originalImageHeight);
+	
+	// Size of the viewer widget
+	const auto viewerWidth = float(m_ui.viewerWidget->width());
+	const auto viewerHeight = float(m_ui.viewerWidget->height());
+
+	// The width of the image is constrained by height
+	const float imageWidth = aspectRatio * viewerHeight;
+	const float imageHeight = imageWidth / aspectRatio;
+
+	// Find origin of the image
+	const auto originWidth = (viewerWidth - imageWidth) / 2.f;
+	const auto originHeight = (viewerHeight - imageHeight) / 2.f;
+	
+	// Remap the click on the image
+	const auto imageX = ((x - originWidth) / imageWidth) * originalImageWidth;
+	const auto imageY = ((y - originHeight) / imageHeight)* originalImageHeight;
+
+	// Take in account the image shift
+	const auto imageCenterWidth = getImageCenterX(m_cameraMatrix);
+	const auto imageCenterHeight = getImageCenterY(m_cameraMatrix);
+	const auto imageShiftWidth = imageCenterWidth - (originalImageWidth / 2.f);
+	const auto imageShiftHeight = imageCenterHeight - (originalImageHeight / 2.f);
+
+	m_keypointsDock->addKeypoint(imageX + imageShiftWidth, imageY + imageShiftHeight);
 }
 
 void MainWindow::setupUi()
 {
 	m_ui.setupUi(this);
 
+	m_keypointsDock = new KeypointsDockWidget(this);
+	addDockWidget(Qt::RightDockWidgetArea, m_keypointsDock);
+	m_ui.menuBar->addAction(m_keypointsDock->toggleViewAction());
+
+	connect(m_ui.viewerWidget, &ViewerWidget::mouseDoubleClicked, this, &MainWindow::viewDoubleClicked);
+	
 	connect(m_ui.actionSelect_camera_1, &QAction::triggered, [this]() { selectCameraClicked(0); });
 	connect(m_ui.actionSelect_camera_2, &QAction::triggered, [this]() { selectCameraClicked(1); });
 	connect(m_ui.actionSelect_camera_3, &QAction::triggered, [this]() { selectCameraClicked(2); });
@@ -100,12 +148,11 @@ void MainWindow::setupCameras()
 	const cv::Size chessboardSize(6, 9);
 	const auto chessboardSquareSide = 0.0228f;
 	
-	const std::string directory = "Images/3DScene/";
-	
 	// Image files
 	const std::vector<std::string> imageFiles = {
 		"IMG_20200213_165939",
 		"IMG_20200213_165943",
+		/*
 		"IMG_20200213_165946",
 		"IMG_20200213_165951",
 		"IMG_20200213_165954",
@@ -120,49 +167,47 @@ void MainWindow::setupCameras()
 		"IMG_20200213_170032",
 		"IMG_20200213_170035",
 		"IMG_20200213_170038"
+		*/
 	};
 
 	// Correspondences between 3D points and 2D points in each view 
 	std::vector<std::vector<cv::Vec3f>> objectPoints;
 	std::vector<std::vector<cv::Vec2f>> imagePoints;
 	
-	// Load images
-	std::vector<cv::Mat> imagesRaw;
-	imagesRaw.reserve(imageFiles.size());
+	// Load original images
+	m_imagesRaw.clear();
+	m_imagesRaw.reserve(imageFiles.size());
 	for (const auto& file: imageFiles)
 	{
-		const auto image = cv::imread(directory + file + ".jpg");
-		imagesRaw.push_back(image);
+		const auto image = cv::imread(m_directory + file + ".jpg");
+		m_imagesRaw.push_back(image);
 
 		findCorners(image,
 			        objectPoints, 
 			        imagePoints, 
-			        directory + "keypoints/" + file + ".jpg",
+			        m_directory + "keypoints/" + file + ".jpg",
 					chessboardSize,
 					chessboardSquareSide);
 	}
 
-	const auto imageWidth = imagesRaw.front().cols;
-	const auto imageHeight = imagesRaw.front().rows;
+	const auto imageWidth = m_imagesRaw.front().cols;
+	const auto imageHeight = m_imagesRaw.front().rows;
 
 	// Calibration cameras
-	cv::Mat1f cameraMatrix;
 	cv::Mat1f distCoeffs;
-	std::vector<cv::Mat> rvecs;
-	std::vector<cv::Mat> tvecs;
 	const auto error = cv::calibrateCamera(objectPoints,
 		                                   imagePoints,
-		                                   imagesRaw.front().size(),
-		                                   cameraMatrix,
+		                                   m_imagesRaw.front().size(),
+		                                   m_cameraMatrix,
 		                                   distCoeffs,
-		                                   rvecs,
-		                                   tvecs);
+		                                   m_rvecs,
+		                                   m_tvecs);
 	
-	std::vector<cv::Mat> images(imagesRaw.size());
-	for (unsigned int i = 0; i < imagesRaw.size(); i++)
+	m_images.resize(m_imagesRaw.size());
+	for (unsigned int i = 0; i < m_imagesRaw.size(); i++)
 	{
-		cv::undistort(imagesRaw[i], images[i], cameraMatrix, distCoeffs);
-		cv::imwrite(directory + "undistorted/" + imageFiles[i] + ".jpg", images[i]);
+		cv::undistort(m_imagesRaw[i], m_images[i], m_cameraMatrix, distCoeffs);
+		cv::imwrite(m_directory + "undistorted/" + imageFiles[i] + ".jpg", m_images[i]);
 	}
 	
 	// Since images are undistorted, we can now set the distortion coefficients to zero
@@ -173,20 +218,20 @@ void MainWindow::setupCameras()
 
 	// For a Google Pixel 3, the sensor is 5.76 mm by 4.29 mm
 	const cv::Size2f sensorSize(5.76f, 4.29f);
-	const auto focalLength = focalLengthInMm(cameraMatrix, imagesRaw.front().size(), sensorSize);
+	const auto focalLength = focalLengthInMm(m_cameraMatrix, m_imagesRaw.front().size(), sensorSize);
 	const auto fovy = qRadiansToDegrees(2.0f * std::atan(sensorSize.height / (2.0f * focalLength.second)));
 
 	// Shift image according to the center of the optical axis in the image
-	const float imageCenterWidth = cameraMatrix.at<float>(0, 2);
-	const float imageCenterHeight = cameraMatrix.at<float>(1, 2);
+	const float imageCenterWidth = getImageCenterX(m_cameraMatrix);
+	const float imageCenterHeight = getImageCenterY(m_cameraMatrix);
 	const float imageShiftWidth = imageWidth / 2 - imageCenterWidth;
 	const float imageShiftHeight = imageHeight / 2 - imageCenterHeight;
 
 	// Pose of cameras in world coordinates
-	for (unsigned int i = 0; i < imagesRaw.size(); i++)
+	for (unsigned int i = 0; i < m_imagesRaw.size(); i++)
 	{
 		QVector3D eye, at, up;
-		std::tie(eye, at, up) = cameraEyeAtUpFromPose(cameraMatrix, rvecs[i], tvecs[i]);
+		std::tie(eye, at, up) = cameraEyeAtUpFromPose(m_cameraMatrix, m_rvecs[i], m_tvecs[i]);
 
 		Camera camera(
 			eye,
@@ -202,7 +247,7 @@ void MainWindow::setupCameras()
 		m_cameras.push_back(camera);
 				
 		// Shift the image according to the optical center
-		const auto shiftedImage = translateImage(images[i], imageShiftWidth, imageShiftHeight);
+		const auto shiftedImage = translateImage(m_images[i], imageShiftWidth, imageShiftHeight);
 
 		// Add the physical camera to the view
 		auto physicalCamera = std::make_unique<PhysicalCamera>(
@@ -212,4 +257,67 @@ void MainWindow::setupCameras()
 		);
 		m_ui.viewerWidget->addObject(std::move(physicalCamera));
 	}
+}
+
+void MainWindow::reconstructPoints()
+{
+	// Load key points from a file
+	Keypoints keypoints;
+	keypoints.load(m_directory + "keypoints.txt");
+
+	// Homography matrices of each views
+	std::vector<cv::Mat1f> homographies;
+	for (unsigned int i = 0; i < m_images.size(); i++)
+	{
+		// TODO: bug here
+		homographies.push_back(computeProjectionMatrix(m_cameraMatrix, m_rvecs[i], m_tvecs[i]));
+	}
+
+	for (unsigned int i = 0; i < keypoints.size(); i++)
+	{
+		std::vector<cv::Mat1f> keypointHomographies;
+		std::vector<cv::Vec2f> keypointPoints;
+
+		const auto& keypoint = keypoints.getPointsInImages(i);
+		
+		for (const auto& point : keypoint)
+		{
+			keypointHomographies.push_back(homographies[point.first]);
+			keypointPoints.push_back(point.second);
+		}
+		
+		const auto point = reconstructPointFromViews(keypointHomographies, keypointPoints);
+
+		std::cout << point << std::endl;
+	}
+	
+	/*
+	// Keypoints in each images
+	const std::vector<std::vector<cv::Vec2f>> keypoints =
+	{
+		// First image
+		{
+			{2629, 939}, // top right corner
+			{2532, 613}, // top left corner
+			{1753, 766}, // bottom left corner
+			{1780, 1101} // bottom right corner
+		},
+		// Second image
+		{
+			{2534, 1174}, // top right corner
+			{2450, 834},  // top left corner
+			{1724, 991},  // bottom left corner
+			{1753, 1335}  // bottom right corner
+		},
+		// Third image
+		{
+			{2632, 966}, // top right corner
+			{2438, 659}, // top left corner
+			{1766, 941}, // bottom left corner
+			{1923, 1264} // bottom right corner
+		},
+	};
+	*/
+	
+	// TODO: triangulation
 }

@@ -306,3 +306,13 @@ cv::Mat translateImage(const cv::Mat& image, float x, float y)
 
 	return translatedImage.clone();
 }
+
+float getImageCenterX(const cv::Mat1f& cameraMatrix)
+{
+	return cameraMatrix.at<float>(0, 2);
+}
+
+float getImageCenterY(const cv::Mat1f& cameraMatrix)
+{
+	return cameraMatrix.at<float>(1, 2);
+}

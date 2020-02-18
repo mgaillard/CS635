@@ -200,6 +200,8 @@ cv::Vec3f reconstructPointFromViews(
 	cv::Mat1f x;
 	cv::solve(A, b, x, cv::DECOMP_SVD);
 
+	// TODO: implement non-linear optimization to refine the result
+
 	// Convert to vector
 	return {
 		x.at<float>(0),

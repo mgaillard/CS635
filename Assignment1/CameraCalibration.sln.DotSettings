@@ -8,4 +8,7 @@
 std::max
 cv::Mat_::operator()
 cv::Range::Range</s:String>
-	<s:Boolean x:Key="/Default/UserDictionary/Words/=Homography/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Homographies/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Homography/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=keypoint/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Keypoints/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

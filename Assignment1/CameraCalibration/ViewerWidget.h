@@ -24,6 +24,9 @@ public:
 
 	void setCamera(const OrbitCamera& camera);
 
+signals:
+	void mouseDoubleClicked(qreal x, qreal y);
+	
 public slots:
 	void cleanup();
 	void printInfo();
@@ -36,6 +39,7 @@ protected:
 	void mouseReleaseEvent(QMouseEvent* event) override;
 	void mouseMoveEvent(QMouseEvent* event) override;
 	void wheelEvent(QWheelEvent* event) override;
+	void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
 	QOpenGLDebugLogger* m_logger;
