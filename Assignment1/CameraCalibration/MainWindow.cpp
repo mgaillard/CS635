@@ -171,23 +171,28 @@ void MainWindow::setupCameras()
 	};
 
 	// Correspondences between 3D points and 2D points in each view 
-	std::vector<std::vector<cv::Vec3f>> objectPoints;
-	std::vector<std::vector<cv::Vec2f>> imagePoints;
+	std::vector<std::vector<cv::Vec3f>> objectPoints(imageFiles.size());
+	std::vector<std::vector<cv::Vec2f>> imagePoints(imageFiles.size());
 	
 	// Load original images
 	m_imagesRaw.clear();
-	m_imagesRaw.reserve(imageFiles.size());
-	for (const auto& file: imageFiles)
+	m_imagesRaw.resize(imageFiles.size());
+	#pragma omp parallel for
+	for (int i = 0; i < imageFiles.size(); i++)
 	{
-		const auto image = cv::imread(m_directory + file + ".jpg");
-		m_imagesRaw.push_back(image);
+		m_imagesRaw[i] = cv::imread(m_directory + imageFiles[i] + ".jpg");
 
-		findCorners(image,
-			        objectPoints, 
-			        imagePoints, 
-			        m_directory + "keypoints/" + file + ".jpg",
+		std::vector<std::vector<cv::Vec3f>> currentObjectPoints;
+		std::vector<std::vector<cv::Vec2f>> currentImagePoints;
+		findCorners(m_imagesRaw[i],
+			        currentObjectPoints, 
+			        currentImagePoints, 
+			        m_directory + "keypoints/" + imageFiles[i] + ".jpg",
 					chessboardSize,
 					chessboardSquareSide);
+
+		objectPoints[i] = currentObjectPoints.front();
+		imagePoints[i] = currentImagePoints.front();
 	}
 
 	// Calibration cameras
@@ -201,7 +206,8 @@ void MainWindow::setupCameras()
 		                                   m_tvecs);
 	
 	m_images.resize(m_imagesRaw.size());
-	for (unsigned int i = 0; i < m_imagesRaw.size(); i++)
+	#pragma omp parallel for
+	for (int i = 0; i < m_imagesRaw.size(); i++)
 	{
 		cv::undistort(m_imagesRaw[i], m_images[i], m_cameraMatrix, distCoeffs);
 		cv::imwrite(m_directory + "undistorted/" + imageFiles[i] + ".jpg", m_images[i]);
@@ -227,15 +233,13 @@ void MainWindow::setupCameras()
 		QVector3D eye, at, up;
 		std::tie(eye, at, up) = cameraEyeAtUpFromPose(m_cameraMatrix, m_rvecs[i], m_tvecs[i]);
 
-		Camera camera(
-			eye,
-			at,
-			up,
-			fovy,
-			aspectRatio,
-			0.001f,
-			10.0f
-		);
+		const Camera camera(eye,
+			                at,
+			                up,
+			                fovy,
+			                aspectRatio,
+			                0.001f,
+			                10.0f);
 
 		// Add the camera to the list of cameras
 		m_cameras.push_back(camera);
