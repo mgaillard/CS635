@@ -4,14 +4,19 @@
 
 MeshObject::MeshObject(const QMatrix4x4& worldMatrix,
                        std::vector<QVector3D> vertices,
-                       std::vector<std::tuple<int, int, int>> faces) :
+					   std::vector<QVector2D> uv,
+                       std::vector<std::tuple<int, int, int>> faces,
+					   QImage textureImage) :
 	Renderable(worldMatrix),
 	m_vbo(QOpenGLBuffer::VertexBuffer),
 	m_ebo(QOpenGLBuffer::IndexBuffer),
+	m_texture(QOpenGLTexture::Target2D),
 	m_vertices(std::move(vertices)),
-	m_faces(std::move(faces))
+	m_uv(std::move(uv)),
+	m_faces(std::move(faces)),
+	m_textureImage(std::move(textureImage))
 {
-
+	assert(m_vertices.size() == m_uv.size());
 }
 
 void MeshObject::initialize(QOpenGLContext* context)
@@ -26,9 +31,10 @@ void MeshObject::initialize(QOpenGLContext* context)
 
 	m_program->bind();
 
-	// Initialize vertices and indices
+	// Initialize vertices
 	initializeVbo();
 	initializeEbo();
+	initializeTexture();
 
 	// Init VAO
 	m_vao.create();
@@ -37,8 +43,11 @@ void MeshObject::initialize(QOpenGLContext* context)
 	// Configure VBO
 	m_vbo.bind();
 	const auto posLoc = 0;
+	const auto uvLoc = 1;
 	m_program->enableAttributeArray(posLoc);
-	m_program->setAttributeArray(posLoc, nullptr, 3, 0);
+	m_program->enableAttributeArray(uvLoc);
+	m_program->setAttributeBuffer(posLoc, GL_FLOAT, 0, 3, 2 * sizeof(QVector3D));
+	m_program->setAttributeBuffer(uvLoc, GL_FLOAT, sizeof(QVector3D), 3, 2 * sizeof(QVector3D));
 
 	// Configure EBO
 	m_ebo.bind();
@@ -53,6 +62,7 @@ void MeshObject::cleanup()
 		m_vao.destroy();
 		m_vbo.destroy();
 		m_ebo.destroy();
+		m_texture.destroy();
 		m_program.reset(nullptr);
 	}
 }
@@ -83,6 +93,11 @@ void MeshObject::paint(QOpenGLContext* context, const Camera& camera)
 		// Bind the VAO containing the patches
 		QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
 
+		// Bind the texture
+		const auto textureUnit = 0;
+		m_program->setUniformValue("image", textureUnit);
+		m_texture.bind(textureUnit);
+
 		f->glDrawElements(GL_TRIANGLES,
 			              m_ebo.size(),
 			              GL_UNSIGNED_INT,
@@ -94,11 +109,20 @@ void MeshObject::paint(QOpenGLContext* context, const Camera& camera)
 
 void MeshObject::initializeVbo()
 {
+	std::vector<QVector3D> data;
+
+	data.reserve(m_vertices.size() + m_uv.size());
+	for (unsigned int i = 0; i < m_vertices.size(); i++)
+	{
+		data.push_back(m_vertices[i]);
+		data.emplace_back(m_uv[i].x(), m_uv[i].y(), 0.0f);
+	}
+	
 	// Init VBO
 	m_vbo.create();
 	m_vbo.bind();
 
-	m_vbo.allocate(m_vertices.data(), m_vertices.size() * sizeof(QVector3D));
+	m_vbo.allocate(data.data(), data.size() * sizeof(QVector3D));
 
 	m_vbo.release();
 }
@@ -124,4 +148,16 @@ void MeshObject::initializeEbo()
 	m_ebo.allocate(indices.data(), indices.size() * sizeof(GLuint));
 
 	m_ebo.release();
+}
+
+void MeshObject::initializeTexture()
+{
+	m_texture.destroy();
+	m_texture.create();
+	m_texture.setFormat(QOpenGLTexture::RGBA32F);
+	m_texture.setMinificationFilter(QOpenGLTexture::Linear);
+	m_texture.setMagnificationFilter(QOpenGLTexture::Linear);
+	m_texture.setWrapMode(QOpenGLTexture::ClampToEdge);
+	m_texture.setSize(m_textureImage.width(), m_textureImage.height());
+	m_texture.setData(m_textureImage.mirrored(), QOpenGLTexture::DontGenerateMipMaps);
 }

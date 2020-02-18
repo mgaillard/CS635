@@ -16,12 +16,64 @@ int Keypoints::size() const
 	return m_points.size();
 }
 
+bool Keypoints::hasPoint(int keypoint, int image) const
+{
+	assert(keypoint >= 0);
+	assert(keypoint < m_points.size());
+
+	for (const auto& point : m_points[keypoint])
+	{
+		if (point.first == image)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+cv::Vec2f Keypoints::getPoint(int keypoint, int image) const
+{
+	assert(keypoint >= 0);
+	assert(keypoint < m_points.size());
+	
+	cv::Vec2f result;
+
+	for (const auto& point : m_points[keypoint])
+	{
+		if (point.first == image)
+		{
+			return point.second;
+		}
+	}
+	
+	return cv::Vec2f(-1.f, -1.f);
+}
+
 const std::vector<Keypoints::ImageKeypoint>& Keypoints::getPointsInImages(int i) const
 {
 	assert(i >= 0);
 	assert(i < m_points.size());
 	
 	return m_points[i];
+}
+
+std::vector<cv::Vec2f> Keypoints::getPointInImage(int i) const
+{
+	std::vector<cv::Vec2f> points;
+
+	for (const auto& image : m_points)
+	{
+		for (const auto& point : image)
+		{
+			if (point.first == i)
+			{
+				points.push_back(point.second);
+			}
+		}
+	}
+	
+	return points;
 }
 
 bool Keypoints::load(const std::string& filename)

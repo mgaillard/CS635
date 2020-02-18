@@ -29,6 +29,9 @@
     <Filter Include="External\dlib">
       <UniqueIdentifier>{1c8a9811-347f-4053-8037-2cfba354dc96}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{dd11e3ff-e611-4a14-b28d-df068d246b47}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -144,5 +147,31 @@
     <ClInclude Include="PointObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\mesh_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\mesh_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\physical_camera_frustum_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\physical_camera_frustum_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\physical_camera_image_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\physical_camera_image_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\point_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\point_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

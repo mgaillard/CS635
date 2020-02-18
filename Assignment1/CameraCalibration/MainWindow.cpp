@@ -121,11 +121,22 @@ void MainWindow::setupPattern()
 		{   0.0f, 0.0228f, 0.0f},
 		{0.0228f, 0.0228f, 0.0f}
 	};
+
+	std::vector<QVector2D> uv = {
+		{0.0f, 0.0f},
+		{0.0f, 0.0f},
+		{0.0f, 0.0f},
+		{0.0f, 0.0f}
+	};
 	
 	std::vector<std::tuple<int, int, int>> faces = {
 		std::make_tuple(0, 1, 2),
 		std::make_tuple(1, 3, 2)
 	};
+
+	// Small black image
+	QImage textureImage(1, 1, QImage::Format_Grayscale8);
+	textureImage.fill(Qt::black);
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -139,7 +150,7 @@ void MainWindow::setupPattern()
 				0.0f
 			);
 			
-			auto mesh = std::make_unique<MeshObject>(meshWorldMatrix, vertices, faces);
+			auto mesh = std::make_unique<MeshObject>(meshWorldMatrix, vertices, uv, faces, textureImage);
 			m_ui.viewerWidget->addObject(std::move(mesh));
 		}
 	}
@@ -313,16 +324,51 @@ void MainWindow::reconstructPoints()
 		points.push_back(convertToQt(point));
 	}
 
+	// Display points in 2D views
 	auto pointObjects = std::make_unique<PointObject>(QMatrix4x4(), points);
 	m_ui.viewerWidget->addObject(std::move(pointObjects));
 
-	// Display points in 2D views
+	const int imageId = 0;
 
 	// Get all the keypoints from the nearest view to the current camera view
+	const auto imageKeypoints = keypoints.getPointInImage(imageId);
 
 	// Triangulate the keypoints in 2D
+	std::vector<QVector3D> vertices = points;
+
+	std::vector<QVector2D> uv;
+	uv.reserve(points.size());
+	for (int i = 0; i < 7; i++)
+	{
+		// Position of the keypoints in 2D on the first view
+		if (keypoints.hasPoint(i, imageId))
+		{
+			const auto pointInImage = keypoints.getPoint(i, imageId);
+			
+			uv.emplace_back(
+				pointInImage[0] / m_images[imageId].cols,
+				// The origin for UV mapping is bottom left, instead of top left (in Qt)
+				(m_images[imageId].rows - pointInImage[1]) / m_images[imageId].rows
+			);
+		}
+		else
+		{
+			uv.emplace_back(0.f, 0.f);
+		}
+	}
+	
+	std::vector<std::tuple<int, int, int>> faces = {
+		std::make_tuple(0, 1, 2),
+		std::make_tuple(0, 2, 3),
+		std::make_tuple(0, 3, 4),
+		std::make_tuple(3, 5, 4),
+		std::make_tuple(0, 6, 1),
+		std::make_tuple(0, 4, 6)
+	};
 
 	// Use the 3D positions of points to get a 3D mesh
+	auto mesh = std::make_unique<MeshObject>(QMatrix4x4(), vertices, uv, faces, convertToQtImage(m_images[imageId]));
+	m_ui.viewerWidget->addObject(std::move(mesh));
 
 	// Texture triangles with the image in the nearest view 2D project a texture on the 3D triangle
 	

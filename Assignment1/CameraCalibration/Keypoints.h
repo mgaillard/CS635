@@ -15,13 +15,20 @@ public:
 
 	int size() const;
 
+	// Check whether a keypoint is in an image
+	bool hasPoint(int keypoint, int image) const;
+
+	// Get a keypoint in an image
+	cv::Vec2f getPoint(int keypoint, int image) const;
+
 	// Add a keypoints with his coordinates in at least two images
 	void add(std::vector<ImageKeypoint> pointsInImages);
 
 	// Return the coordinates of the keypoints in images
 	const std::vector<ImageKeypoint>& getPointsInImages(int i) const;
 
-	// TODO: get all the keypoints in one image
+	// Get all the keypoints in one image
+	std::vector<cv::Vec2f> getPointInImage(int i) const;
 
 	bool load(const std::string& filename);
 	

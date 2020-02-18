@@ -132,6 +132,16 @@
     <ClInclude Include="Utils.h" />
     <QtMoc Include="ViewerWidget.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\mesh_fs.glsl" />
+    <None Include="Shaders\mesh_vs.glsl" />
+    <None Include="Shaders\physical_camera_frustum_fs.glsl" />
+    <None Include="Shaders\physical_camera_frustum_vs.glsl" />
+    <None Include="Shaders\physical_camera_image_fs.glsl" />
+    <None Include="Shaders\physical_camera_image_vs.glsl" />
+    <None Include="Shaders\point_fs.glsl" />
+    <None Include="Shaders\point_vs.glsl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
     <Import Project="$(QtMsBuild)\qt.targets" />
