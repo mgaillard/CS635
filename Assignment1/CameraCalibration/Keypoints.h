@@ -21,6 +21,8 @@ public:
 	// Return the coordinates of the keypoints in images
 	const std::vector<ImageKeypoint>& getPointsInImages(int i) const;
 
+	// TODO: get all the keypoints in one image
+
 	bool load(const std::string& filename);
 	
 private:

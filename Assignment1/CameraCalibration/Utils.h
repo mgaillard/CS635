@@ -8,7 +8,7 @@
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec3f& m);
 cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec4f& m);
 
-cv::Mat computeProjectionMatrix(cv::Mat cameraMatrix, cv::Mat rvec, cv::Mat tvec);
+cv::Mat1f computeProjectionMatrix(const cv::Mat1f& cameraMatrix, const cv::Mat1f& rvec, const cv::Mat1f& tvec);
 
 // The 3x4 projection matrix without the 3rd column and normalized
 cv::Mat1f removeZProjectionMatrix(const cv::Mat& projectionMatrix);

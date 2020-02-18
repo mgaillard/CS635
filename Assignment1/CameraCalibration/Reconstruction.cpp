@@ -179,7 +179,7 @@ cv::Vec3f reconstructPointFromViews(
 
 	// For the linear system Ax=b to solve
 	cv::Mat1f A(3 * numberViews, 3 + numberViews, 0.0f);
-	cv::Mat1f b(6, 1, 0.0f);
+	cv::Mat1f b(3 * numberViews, 1, 0.0f);
 	for (int v = 0; v < numberViews; v++)
 	{
 		// Copy the 3x3 rotation matrix from this view, to the left of the matrix A

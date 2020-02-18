@@ -48,9 +48,9 @@ cv::Vec2f projectPoint(const cv::Mat1f& H, const cv::Vec4f& m)
 }
 
 // Source: https://answers.opencv.org/question/162932/create-a-stereo-projection-matrix-using-rvec-and-tvec/
-cv::Mat computeProjectionMatrix(cv::Mat cameraMatrix, cv::Mat rvec, cv::Mat tvec)
+cv::Mat1f computeProjectionMatrix(const cv::Mat1f& cameraMatrix, const cv::Mat1f& rvec, const cv::Mat1f& tvec)
 {
-	cv::Mat rotMat(3, 3, CV_64F), rotTransMat(3, 4, CV_64F);
+	cv::Mat1f rotMat(3, 3), rotTransMat(3, 4);
 	// Convert rotation vector into rotation matrix 
 	cv::Rodrigues(rvec, rotMat);
 	// Append translation vector to rotation matrix
@@ -58,8 +58,7 @@ cv::Mat computeProjectionMatrix(cv::Mat cameraMatrix, cv::Mat rvec, cv::Mat tvec
 	// Compute projection matrix by multiplying intrinsic parameter 
 	// matrix (A) with 3 x 4 rotation and translation pose matrix (RT).
 	// Formula: Projection Matrix = A * RT;
-	cv::Mat result = (cameraMatrix * rotTransMat);
-	return result.clone();
+	return cameraMatrix * rotTransMat;
 }
 
 cv::Mat1f removeZProjectionMatrix(const cv::Mat& projectionMatrix)

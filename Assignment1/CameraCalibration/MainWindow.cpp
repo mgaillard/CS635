@@ -152,7 +152,6 @@ void MainWindow::setupCameras()
 	const std::vector<std::string> imageFiles = {
 		"IMG_20200213_165939",
 		"IMG_20200213_165943",
-		/*
 		"IMG_20200213_165946",
 		"IMG_20200213_165951",
 		"IMG_20200213_165954",
@@ -167,7 +166,6 @@ void MainWindow::setupCameras()
 		"IMG_20200213_170032",
 		"IMG_20200213_170035",
 		"IMG_20200213_170038"
-		*/
 	};
 
 	// Correspondences between 3D points and 2D points in each view 
@@ -269,7 +267,6 @@ void MainWindow::reconstructPoints()
 	std::vector<cv::Mat1f> homographies;
 	for (unsigned int i = 0; i < m_images.size(); i++)
 	{
-		// TODO: bug here
 		homographies.push_back(computeProjectionMatrix(m_cameraMatrix, m_rvecs[i], m_tvecs[i]));
 	}
 
@@ -290,34 +287,15 @@ void MainWindow::reconstructPoints()
 
 		std::cout << point << std::endl;
 	}
+
+	// Display points in 2D views
+
+	// Get all the keypoints from the nearest view to the current camera view
+
+	// Triangulate the keypoints in 2D
+
+	// Use the 3D positions of points to get a 3D mesh
+
+	// Texture triangles with the image in the nearest view 2D project a texture on the 3D triangle
 	
-	/*
-	// Keypoints in each images
-	const std::vector<std::vector<cv::Vec2f>> keypoints =
-	{
-		// First image
-		{
-			{2629, 939}, // top right corner
-			{2532, 613}, // top left corner
-			{1753, 766}, // bottom left corner
-			{1780, 1101} // bottom right corner
-		},
-		// Second image
-		{
-			{2534, 1174}, // top right corner
-			{2450, 834},  // top left corner
-			{1724, 991},  // bottom left corner
-			{1753, 1335}  // bottom right corner
-		},
-		// Third image
-		{
-			{2632, 966}, // top right corner
-			{2438, 659}, // top left corner
-			{1766, 941}, // bottom left corner
-			{1923, 1264} // bottom right corner
-		},
-	};
-	*/
-	
-	// TODO: triangulation
 }
