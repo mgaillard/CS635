@@ -210,7 +210,15 @@ void MainWindow::setupCameras()
 	for (int i = 0; i < m_imagesRaw.size(); i++)
 	{
 		cv::undistort(m_imagesRaw[i], m_images[i], m_cameraMatrix, distCoeffs);
+		
 		cv::imwrite(m_directory + "undistorted/" + imageFiles[i] + ".jpg", m_images[i]);
+		drawProjectedCorners(m_images[i],
+			                 objectPoints[i],
+			                 m_cameraMatrix,
+			                 distCoeffs,
+			                 m_rvecs[i],
+			                 m_tvecs[i],
+			                 m_directory + "reprojections/" + imageFiles[i] + ".jpg");
 	}
 	
 	// Since images are undistorted, we can now set the distortion coefficients to zero
