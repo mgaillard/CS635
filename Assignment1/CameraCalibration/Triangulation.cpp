@@ -36,7 +36,7 @@ int inCirclePredicates(const double* pa, const double* pb, const double* pc, con
     } else {
         return 0;
     }
-};
+}
 
 std::vector<std::tuple<int, int, int>> triangulate(const std::vector<QVector2D>& points)
 {
