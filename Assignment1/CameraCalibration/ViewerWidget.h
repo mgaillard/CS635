@@ -22,6 +22,8 @@ public:
 
 	void addObject(std::unique_ptr<Renderable> object);
 
+	void removeLastObject();
+
 	void setCamera(const OrbitCamera& camera);
 
 signals:

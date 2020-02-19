@@ -16,6 +16,7 @@
 #include "PhysicalCamera.h"
 #include "PointObject.h"
 #include "Reconstruction.h"
+#include "Triangulation.h"
 #include "Utils.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -36,10 +37,24 @@ void MainWindow::setupScene()
 	setupPhysicalCameras();
 	reconstructPoints();
 
-	selectCameraClicked(0);
+	// Select the first camera and reconstruct the mesh from this point of view
+	selectCameraClickedWithoutReconstruction(0);
+	reconstructMesh(0, false);
 }
 
 void MainWindow::selectCameraClicked(int camera)
+{
+	if (camera >= 0 && camera < m_cameras.size())
+	{
+		// Set the camera in the viewer
+		selectCameraClickedWithoutReconstruction(camera);
+
+		// Reconstruct the mesh from this view
+		reconstructMesh(m_currentCamera, true);
+	}
+}
+
+void MainWindow::selectCameraClickedWithoutReconstruction(int camera)
 {
 	if (camera >= 0 && camera < m_cameras.size())
 	{
@@ -295,8 +310,7 @@ void MainWindow::setupPhysicalCameras()
 void MainWindow::reconstructPoints()
 {
 	// Load key points from a file
-	Keypoints keypoints;
-	keypoints.load(m_directory + "keypoints.txt");
+	m_keypoints.load(m_directory + "keypoints.txt");
 
 	// Homography matrices of each views
 	std::vector<cv::Mat1f> homographies;
@@ -305,13 +319,12 @@ void MainWindow::reconstructPoints()
 		homographies.push_back(computeProjectionMatrix(m_cameraMatrix, m_rvecs[i], m_tvecs[i]));
 	}
 
-	std::vector<QVector3D> points;
-	for (unsigned int i = 0; i < keypoints.size(); i++)
+	for (unsigned int i = 0; i < m_keypoints.size(); i++)
 	{
 		std::vector<cv::Mat1f> keypointHomographies;
 		std::vector<cv::Vec2f> keypointPoints;
 
-		const auto& keypoint = keypoints.getPointsInImages(i);
+		const auto& keypoint = m_keypoints.getPointsInImages(i);
 		
 		for (const auto& point : keypoint)
 		{
@@ -321,55 +334,55 @@ void MainWindow::reconstructPoints()
 		
 		const auto point = reconstructPointFromViews(keypointHomographies, keypointPoints);
 
-		points.push_back(convertToQt(point));
+		m_reconstructedPoints.push_back(convertToQt(point));
 	}
 
 	// Display points in 2D views
-	auto pointObjects = std::make_unique<PointObject>(QMatrix4x4(), points);
+	auto pointObjects = std::make_unique<PointObject>(QMatrix4x4(), m_reconstructedPoints);
 	m_ui.viewerWidget->addObject(std::move(pointObjects));
+}
 
-	const int imageId = 0;
-
+void MainWindow::reconstructMesh(int imageId, bool removeLastMesh)
+{
 	// Get all the keypoints from the nearest view to the current camera view
-	const auto imageKeypoints = keypoints.getPointInImage(imageId);
+	const auto imageKeypoints = m_keypoints.getPointInImage(imageId);
 
 	// Triangulate the keypoints in 2D
-	std::vector<QVector3D> vertices = points;
-
+	std::vector<QVector3D> vertices;
+	std::vector<QVector2D> keypointsInImage;
 	std::vector<QVector2D> uv;
-	uv.reserve(points.size());
-	for (int i = 0; i < 7; i++)
+
+	// Reserve memory
+	vertices.reserve(m_reconstructedPoints.size());
+	keypointsInImage.reserve(m_reconstructedPoints.size());
+	uv.reserve(m_reconstructedPoints.size());
+
+	// Transform the keypoint of the current image so that we can triangulate and display them
+	for (const auto& imageKeypoint : imageKeypoints)
 	{
-		// Position of the keypoints in 2D on the first view
-		if (keypoints.hasPoint(i, imageId))
-		{
-			const auto pointInImage = keypoints.getPoint(i, imageId);
-			
-			uv.emplace_back(
-				pointInImage[0] / m_images[imageId].cols,
-				// The origin for UV mapping is bottom left, instead of top left (in Qt)
-				(m_images[imageId].rows - pointInImage[1]) / m_images[imageId].rows
-			);
-		}
-		else
-		{
-			uv.emplace_back(0.f, 0.f);
-		}
+		const auto& coordinatesInImage = imageKeypoint.first;
+		const auto& keypointIndex = imageKeypoint.second;
+
+		vertices.push_back(m_reconstructedPoints[keypointIndex]);
+
+		keypointsInImage.emplace_back(coordinatesInImage[0], coordinatesInImage[1]);
+
+		uv.emplace_back(
+			coordinatesInImage[0] / m_images[imageId].cols,
+			// The origin for UV mapping is bottom left, instead of top left (in Qt)
+			(m_images[imageId].rows - coordinatesInImage[1]) / m_images[imageId].rows
+		);
+	}
+
+	std::vector<std::tuple<int, int, int>> faces = triangulate(keypointsInImage);
+
+	// We remove the last mesh if necessary
+	if (removeLastMesh)
+	{
+		m_ui.viewerWidget->removeLastObject();
 	}
 	
-	std::vector<std::tuple<int, int, int>> faces = {
-		std::make_tuple(0, 1, 2),
-		std::make_tuple(0, 2, 3),
-		std::make_tuple(0, 3, 4),
-		std::make_tuple(3, 5, 4),
-		std::make_tuple(0, 6, 1),
-		std::make_tuple(0, 4, 6)
-	};
-
 	// Use the 3D positions of points to get a 3D mesh
 	auto mesh = std::make_unique<MeshObject>(QMatrix4x4(), vertices, uv, faces, convertToQtImage(m_images[imageId]));
 	m_ui.viewerWidget->addObject(std::move(mesh));
-
-	// Texture triangles with the image in the nearest view 2D project a texture on the 3D triangle
-	
 }

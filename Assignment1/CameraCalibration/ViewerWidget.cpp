@@ -25,6 +25,17 @@ void ViewerWidget::addObject(std::unique_ptr<Renderable> object)
 	update();
 }
 
+void ViewerWidget::removeLastObject()
+{
+	makeCurrent();
+	m_objects.back()->cleanup();
+	doneCurrent();
+
+	m_objects.pop_back();
+
+	update();
+}
+
 void ViewerWidget::setCamera(const OrbitCamera& camera)
 {
 	m_camera = camera;
@@ -131,8 +142,8 @@ void ViewerWidget::wheelEvent(QWheelEvent* event)
 	}
 	else if (event->modifiers() & Qt::ControlModifier)
 	{
-		// If control is used, zooming is twice slower
-		speed = 0.5;
+		// If control is used, zooming is four times slower
+		speed = 0.25;
 	}
 
 	const auto numDegrees = event->angleDelta() / 8;

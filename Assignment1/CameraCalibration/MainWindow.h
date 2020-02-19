@@ -6,6 +6,8 @@
 
 #include <opencv2/core/core.hpp>
 
+
+#include "Keypoints.h"
 #include "KeypointsDockWidget.h"
 
 class MainWindow : public QMainWindow
@@ -20,6 +22,8 @@ public slots:
 
 	void selectCameraClicked(int camera);
 
+	void selectCameraClickedWithoutReconstruction(int camera);
+
 	void viewDoubleClicked(qreal x, qreal y);
 	
 private:
@@ -32,6 +36,8 @@ private:
 	void setupPhysicalCameras();
 
 	void reconstructPoints();
+
+	void reconstructMesh(int imageId, bool removeLastMesh = true);
 	
 	Ui::MainWindowClass m_ui;
 	KeypointsDockWidget* m_keypointsDock;
@@ -46,4 +52,7 @@ private:
 
 	std::vector<Camera> m_cameras;
 	int m_currentCamera;
+
+	Keypoints m_keypoints;
+	std::vector<QVector3D> m_reconstructedPoints;
 };

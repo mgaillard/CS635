@@ -28,7 +28,8 @@ public:
 	const std::vector<ImageKeypoint>& getPointsInImages(int i) const;
 
 	// Get all the keypoints in one image
-	std::vector<cv::Vec2f> getPointInImage(int i) const;
+	// Return a list of pairs (coordinates, keypoint index)
+	std::vector<std::pair<cv::Vec2f, int>> getPointInImage(int i) const;
 
 	bool load(const std::string& filename);
 	

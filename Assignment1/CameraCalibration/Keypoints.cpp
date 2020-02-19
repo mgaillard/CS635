@@ -58,17 +58,17 @@ const std::vector<Keypoints::ImageKeypoint>& Keypoints::getPointsInImages(int i)
 	return m_points[i];
 }
 
-std::vector<cv::Vec2f> Keypoints::getPointInImage(int i) const
+std::vector<std::pair<cv::Vec2f, int>> Keypoints::getPointInImage(int i) const
 {
-	std::vector<cv::Vec2f> points;
+	std::vector<std::pair<cv::Vec2f, int>> points;
 
-	for (const auto& image : m_points)
+	for (int keypointIndex = 0; keypointIndex < m_points.size(); keypointIndex++)
 	{
-		for (const auto& point : image)
+		for (const auto& pointInImage : m_points[keypointIndex])
 		{
-			if (point.first == i)
+			if (pointInImage.first == i)
 			{
-				points.push_back(point.second);
+				points.emplace_back(pointInImage.second, keypointIndex);
 			}
 		}
 	}

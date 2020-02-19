@@ -85,6 +85,12 @@
     <ClCompile Include="PointObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Triangulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\predicates.c">
+      <Filter>External</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="MainWindow.h">
@@ -145,6 +151,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PointObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangulation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
