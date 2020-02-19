@@ -6,7 +6,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d.hpp>
+
 #include "Utils.h"
+#include "ReprojectionAdjustmentProblem.h"
 
 void findCorners(
 	const cv::Mat& image,
@@ -200,14 +202,15 @@ cv::Vec3f reconstructPointFromViews(
 	cv::Mat1f x;
 	cv::solve(A, b, x, cv::DECOMP_SVD);
 
-	// TODO: implement non-linear optimization to refine the result
-
-	// Convert to vector
-	return {
-		x.at<float>(0),
-		x.at<float>(1),
-		x.at<float>(2)
-	};
+	// Non-linear optimization to refine the result
+	return reprojectionAdjustment(
+		homographies,
+		points,
+		{
+			x.at<float>(0),
+			x.at<float>(1),
+			x.at<float>(2)
+	});
 }
 
 cv::Vec3f lookAtPoint(const cv::Mat1f& homography, const cv::Mat1f& cameraMatrix)

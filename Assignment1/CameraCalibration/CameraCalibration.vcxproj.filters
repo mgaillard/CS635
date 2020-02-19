@@ -91,6 +91,9 @@
     <ClCompile Include="..\external\predicates.c">
       <Filter>External</Filter>
     </ClCompile>
+    <ClCompile Include="ReprojectionAdjustmentProblem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="MainWindow.h">
@@ -154,6 +157,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Triangulation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ReprojectionAdjustmentProblem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
