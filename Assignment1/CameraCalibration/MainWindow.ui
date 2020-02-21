@@ -56,6 +56,7 @@
     <addaction name="actionSelect_camera_14"/>
     <addaction name="actionSelect_camera_15"/>
     <addaction name="actionSelect_camera_16"/>
+    <addaction name="actionSelect_next_camera"/>
    </widget>
    <addaction name="menuCamera"/>
   </widget>
@@ -194,6 +195,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+7</string>
+   </property>
+  </action>
+  <action name="actionSelect_next_camera">
+   <property name="text">
+    <string>Select next camera</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+.</string>
    </property>
   </action>
  </widget>

@@ -20,6 +20,8 @@ public:
 public slots:
 	void setupScene();
 
+	void selectNextCamera();
+
 	void selectCameraClicked(int camera);
 
 	void selectCameraClickedWithoutReconstruction(int camera);

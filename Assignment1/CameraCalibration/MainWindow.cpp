@@ -42,6 +42,12 @@ void MainWindow::setupScene()
 	reconstructMesh(0, false);
 }
 
+void MainWindow::selectNextCamera()
+{
+	const auto nextCamera = (m_currentCamera + 1) % m_cameras.size();
+	selectCameraClicked(nextCamera);
+}
+
 void MainWindow::selectCameraClicked(int camera)
 {
 	if (camera >= 0 && camera < m_cameras.size())
@@ -126,6 +132,7 @@ void MainWindow::setupUi()
 	connect(m_ui.actionSelect_camera_14, &QAction::triggered, [this]() { selectCameraClicked(13); });
 	connect(m_ui.actionSelect_camera_15, &QAction::triggered, [this]() { selectCameraClicked(14); });
 	connect(m_ui.actionSelect_camera_16, &QAction::triggered, [this]() { selectCameraClicked(15); });
+	connect(m_ui.actionSelect_next_camera, &QAction::triggered, [this]() { selectNextCamera(); });
 }
 
 void MainWindow::setupPattern()
